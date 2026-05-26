@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#12141a"/>
+
+  <!-- Grid lines subtle -->
+  <line x1="600" y1="60" x2="600" y2="570" stroke="rgba(180,190,210,0.06)" stroke-width="1"/>
+  <line x1="100" y1="315" x2="1100" y2="315" stroke="rgba(180,190,210,0.06)" stroke-width="1"/>
+
+  <!-- Analema shape approximation (figure-8) -->
+  <g transform="translate(600,315)">
+    <!-- Outer ghost trace -->
+    <path d="M 0,-200 C 60,-190 90,-130 85,-60 C 80,0 60,40 0,50 C -60,40 -80,0 -85,-60 C -90,-130 -60,-190 0,-200 Z"
+          fill="none" stroke="rgba(160,180,210,0.15)" stroke-width="2"/>
+    <path d="M 0,50 C 60,60 100,120 95,190 C 90,240 60,270 0,270 C -60,270 -90,240 -95,190 C -100,120 -60,60 0,50 Z"
+          fill="none" stroke="rgba(160,180,210,0.15)" stroke-width="2"/>
+
+    <!-- Warm animated path (upper lobe) -->
+    <path d="M 0,-200 C 60,-190 90,-130 85,-60 C 80,0 60,40 0,50"
+          fill="none" stroke="rgba(196,155,114,0.85)" stroke-width="3" stroke-linecap="round"/>
+    <!-- Warm animated path (lower lobe) -->
+    <path d="M 0,50 C -60,60 -100,120 -95,190 C -90,240 -60,270 0,270"
+          fill="none" stroke="rgba(196,155,114,0.55)" stroke-width="3" stroke-linecap="round"/>
+
+    <!-- Current position dot -->
+    <circle cx="85" cy="-60" r="10" fill="rgba(196,155,114,0.15)"/>
+    <circle cx="85" cy="-60" r="5" fill="#dbb48a"/>
+
+    <!-- Event dots -->
+    <circle cx="0" cy="-200" r="4" fill="#6b9e6b"/>
+    <circle cx="0" cy="270" r="4" fill="#6b9e6b"/>
+    <circle cx="-3" cy="-10" r="4" fill="#2a9d8f"/>
+    <circle cx="3" cy="55" r="4" fill="#2a9d8f"/>
+    <circle cx="-85" cy="190" r="4" fill="#e9c46a"/>
+    <circle cx="85" cy="-130" r="4" fill="#e9c46a"/>
+  </g>
+
+  <!-- Title -->
+  <text x="600" y="570" font-family="Georgia, serif" font-size="52" font-weight="400" font-style="italic"
+        fill="#eaeef5" text-anchor="middle" letter-spacing="-1">Analemas</text>
+  <text x="600" y="72" font-family="'Courier New', monospace" font-size="13" font-weight="400"
+        fill="rgba(196,155,114,0.9)" text-anchor="middle" letter-spacing="4">
+    MECÁNICA ORBITAL · GEOMETRÍA CELESTE · J2000.0
+  </text>
+
+  <!-- Corner labels -->
+  <text x="64" y="58" font-family="'Courier New', monospace" font-size="11" fill="rgba(160,175,200,0.4)" letter-spacing="2">ANALEMA SOLAR</text>
+  <text x="64" y="76" font-family="'Courier New', monospace" font-size="11" fill="rgba(160,175,200,0.4)" letter-spacing="2">TERRESTRE</text>
+
+  <text x="1136" y="58" font-family="'Courier New', monospace" font-size="11" fill="rgba(160,175,200,0.4)"
+        text-anchor="end" letter-spacing="2">e = 0.01671</text>
+  <text x="1136" y="76" font-family="'Courier New', monospace" font-size="11" fill="rgba(160,175,200,0.4)"
+        text-anchor="end" letter-spacing="2">ε = 23.44°</text>
+
+  <!-- Stars -->
+  <circle cx="150" cy="100" r="1.2" fill="rgba(160,180,210,0.6)"/>
+  <circle cx="320" cy="45" r="0.8" fill="rgba(160,180,210,0.4)"/>
+  <circle cx="890" cy="80" r="1.0" fill="rgba(160,180,210,0.5)"/>
+  <circle cx="1050" cy="140" r="0.7" fill="rgba(160,180,210,0.35)"/>
+  <circle cx="200" cy="480" r="1.1" fill="rgba(160,180,210,0.5)"/>
+  <circle cx="980" cy="500" r="0.9" fill="rgba(160,180,210,0.4)"/>
+  <circle cx="70" cy="320" r="0.8" fill="rgba(160,180,210,0.35)"/>
+  <circle cx="1130" cy="290" r="1.2" fill="rgba(160,180,210,0.55)"/>
+  <circle cx="400" cy="560" r="0.7" fill="rgba(160,180,210,0.3)"/>
+  <circle cx="800" cy="555" r="1.0" fill="rgba(160,180,210,0.45)"/>
+  <circle cx="240" cy="200" r="0.6" fill="rgba(160,180,210,0.3)"/>
+  <circle cx="960" cy="220" r="0.9" fill="rgba(160,180,210,0.4)"/>
+  <circle cx="480" cy="30" r="0.8" fill="rgba(160,180,210,0.35)"/>
+  <circle cx="720" cy="40" r="1.0" fill="rgba(160,180,210,0.5)"/>
+</svg>
