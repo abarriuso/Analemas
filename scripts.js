@@ -76,8 +76,8 @@
       (5 * e * e / 4) * Math.sin(2 * M) -
       (13 * e * e * e / 12) * Math.sin(3 * M);
     const obl =
-      -TE2 * TE2 * Math.sin(2 * lam) +
-      (TE4 / 2) * Math.sin(4 * lam) -
+      TE2 * TE2 * Math.sin(2 * lam) -
+      (TE4 / 2) * Math.sin(4 * lam) +
       (TE6 / 3) * Math.sin(6 * lam);
     return exc + obl;
   }
@@ -104,8 +104,8 @@
         (5 * ecc * ecc / 4) * Math.sin(2 * M) -
         (13 * ecc * ecc * ecc / 12) * Math.sin(3 * M);
       const obl =
-        -t2 * t2 * Math.sin(2 * lam) +
-        (t4 / 2) * Math.sin(4 * lam) -
+        t2 * t2 * Math.sin(2 * lam) -
+        (t4 / 2) * Math.sin(4 * lam) +
         (t6 / 3) * Math.sin(6 * lam);
       const eqT = exc + obl;
       const decl = Math.asin(Math.sin(epsRad) * Math.sin(lam));
@@ -304,7 +304,7 @@
         );
         const lam = (nu + LON_PERIHELION) % TAU;
         const exc = -2 * ecc * Math.sin(M) + (5 * ecc * ecc / 4) * Math.sin(2 * M) - (13 * ecc * ecc * ecc / 12) * Math.sin(3 * M);
-        const obl = -t2 * t2 * Math.sin(2 * lam) + (t4 / 2) * Math.sin(4 * lam) - (t6 / 3) * Math.sin(6 * lam);
+        const obl = t2 * t2 * Math.sin(2 * lam) - (t4 / 2) * Math.sin(4 * lam) + (t6 / 3) * Math.sin(6 * lam);
         const eqT = exc + obl;
         const decl = Math.asin(Math.sin(epsRad) * Math.sin(lam));
         pts.push({ x: eqT, y: decl, em: eqT * (180 / Math.PI) * 4, dd: decl * 180 / Math.PI, day: d });
