@@ -16,3 +16,7 @@ desktop.ini
 # ZIP/archivos comprimidos
 *.zip
 *.tar.gz
+
+# Capturas y frames de verificación
+gif-frames/
+ss-*.png

@@ -279,7 +279,7 @@
     let currentEpsDeg = 23.44, currentEps = currentEpsDeg * DEG;
     let currentEcc = ECC0;
     let currentPoints = [];
-    let xc = 0, yc = 0, range = 1;
+    let xc = 0, yc = 0, xRange = 1, yRange = 1;
     let animProgress = 0;
     const ANIM_SPEED = 0.004;
     let lastTimestamp = 0;
@@ -321,7 +321,8 @@
       const ys = currentPoints.map(p => p.y);
       xc = (arrayMin(xs) + arrayMax(xs)) / 2;
       yc = (arrayMin(ys) + arrayMax(ys)) / 2;
-      range = Math.max(arrayMax(xs) - arrayMin(xs), arrayMax(ys) - arrayMin(ys));
+      xRange = (arrayMax(xs) - arrayMin(xs)) || 1;
+      yRange = (arrayMax(ys) - arrayMin(ys)) || 1;
       const oblSpan = document.getElementById('hero-obl-val');
       if (oblSpan) oblSpan.textContent = currentEpsDeg.toFixed(2) + '°';
       const eccSpan = document.getElementById('hero-ecc-val');
@@ -373,12 +374,15 @@
       ctx.clearRect(0, 0, baseWidth, baseHeight);
       ctx.save();
       ctx.translate(baseWidth / 2, baseHeight / 2);
-      const scale = Math.min(baseWidth, baseHeight) * 0.55 / range;
+      const ref = Math.min(baseWidth, baseHeight);
+      const scaleX = ref * 0.20 / xRange;
+      const scaleY = ref * 0.42 / yRange;
+      const px = p => (p.x - xc) * scaleX;
+      const py = p => -(p.y - yc) * scaleY;
 
       ctx.beginPath();
       currentPoints.forEach((p, i) => {
-        const x = (p.x - xc) * scale, y = -(p.y - yc) * scale;
-        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        if (i === 0) ctx.moveTo(px(p), py(p)); else ctx.lineTo(px(p), py(p));
       });
       ctx.closePath();
       ctx.strokeStyle = CBLUE(0.25); ctx.lineWidth = 1.2; ctx.stroke();
@@ -386,9 +390,7 @@
       const endIdx = Math.floor(currentPoint);
       for (let i = 1; i <= endIdx; i++) {
         const p1 = currentPoints[i - 1], p2 = currentPoints[i];
-        const x1 = (p1.x - xc) * scale, y1 = -(p1.y - yc) * scale;
-        const x2 = (p2.x - xc) * scale, y2 = -(p2.y - yc) * scale;
-        ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+        ctx.beginPath(); ctx.moveTo(px(p1), py(p1)); ctx.lineTo(px(p2), py(p2));
         ctx.strokeStyle = CWARM(0.8); ctx.lineWidth = 1.5; ctx.stroke();
       }
 
@@ -396,7 +398,7 @@
         const idx = Math.floor((ev.day / 365.25) * currentPoints.length);
         if (idx >= currentPoints.length) return;
         const p = currentPoints[idx];
-        const x = (p.x - xc) * scale, y = -(p.y - yc) * scale;
+        const x = px(p), y = py(p);
         ctx.beginPath(); ctx.moveTo(x, y);
         ctx.lineTo(x + ev.xOff * 0.75, y + ev.yOff * 0.75);
         ctx.strokeStyle = `${ev.color}55`; ctx.lineWidth = 0.8; ctx.stroke();
@@ -413,7 +415,7 @@
 
       const cpIndex = Math.floor(currentPoint) % currentPoints.length;
       const cp = currentPoints[cpIndex];
-      const cx = (cp.x - xc) * scale, cy = -(cp.y - yc) * scale;
+      const cx = px(cp), cy = py(cp);
       ctx.beginPath(); ctx.arc(cx, cy, 8, 0, TAU); ctx.fillStyle = CWARM(0.12); ctx.fill();
       ctx.beginPath(); ctx.arc(cx, cy, 4, 0, TAU); ctx.fillStyle = CDOT(); ctx.fill();
 
