@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>Analemas — Mecánica Orbital y Geometría Celeste</title>
+  <meta name="description"
+    content="Simulación interactiva del analema solar, analemas planetarios y el pentagrama de Venus. Basado en Meeus (1998) y datos JPL.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- Fuentes no bloqueantes: preload + onload swap -->
+  <link rel="preload" as="style"
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@300;400;500&family=EB+Garamond:ital,wght@0,400;0,500;1,400;1,500&display=swap"
+    onload="this.onload=null;this.rel='stylesheet'">
+  <noscript>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@300;400;500&family=EB+Garamond:ital,wght@0,400;0,500;1,400;1,500&display=swap" rel="stylesheet">
+  </noscript>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>☀</text></svg>">
+  <link rel="stylesheet" href="styles.css" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="styles.css"></noscript>
+  <script src="scripts.js" defer></script>
+</head>
+
+<body>
+  <a href="#main-content" class="skip-link">Saltar al contenido</a>
+
+  <canvas id="starfield" aria-hidden="true"></canvas>
+
+  <nav aria-label="Navegación principal">
+    <div class="nav-brand"><span class="nav-dot" aria-hidden="true"></span>Analemas</div>
+    <button id="nav-toggle" aria-label="Menú" aria-expanded="false" aria-controls="nav-links-list">☰</button>
+    <ul class="nav-links" id="nav-links-list" role="list">
+      <li role="listitem"><a href="#que-es">01</a></li><li role="listitem"><a href="#matematica">02</a></li><li role="listitem"><a href="#solar">03</a></li>
+      <li role="listitem"><a href="#planetas">04</a></li><li role="listitem"><a href="#venus">05</a></li><li role="listitem"><a href="#tabla">06</a></li><li role="listitem"><a href="#referencias">07</a></li>
+    </ul>
+  </nav>
+
+  <main id="main-content">
+
+  <!-- ══ HERO ══ -->
+  <section id="hero">
+    <div class="hero-inner">
+      <div class="hero-canvas-wrap">
+        <canvas id="hero-canvas" width="560" height="560"
+          aria-label="Analema solar terrestre. La curva en forma de 8 muestra la ecuación del tiempo y la declinación solar."
+          role="img"></canvas>
+      </div>
+      <div class="hero-text-col">
+        <p class="hero-eyebrow">Mecánica orbital &amp; geometría celeste</p>
+        <h1 class="hero-title">La danza del<br>tiempo <em>y el cielo</em></h1>
+        <p class="hero-desc">
+          Fotografía el Sol cada día a la misma hora durante un año entero.
+          Su posición traza en el cielo una figura determinista:
+          la huella de la mecánica orbital escrita en luz.
+        </p>
+        <div class="hero-stats" aria-label="Parámetros actuales del analema">
+          <div class="hstat"><span class="hstat-v" id="hero-period">365.25 d</span><span class="hstat-l">Período</span></div>
+          <div class="hstat-div" aria-hidden="true"></div>
+          <div class="hstat"><span class="hstat-v" id="hero-obl-val">23.44°</span><span class="hstat-l">Oblicuidad</span>
+          </div>
+          <div class="hstat-div" aria-hidden="true"></div>
+          <div class="hstat"><span class="hstat-v" id="hero-ecc-val">0.01671</span><span class="hstat-l">Excentricidad</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="hero-scroll" aria-hidden="true"><span>Explorar</span>
+      <div class="scroll-line"></div>
+    </div>
+  </section>
+
+  <!-- ══ 01 ══ -->
+  <section id="que-es">
+    <div class="wrap">
+      <div class="sec-head fi"><span class="sec-n">01 —</span>
+        <h2 class="sec-t">Fundamentos del analema</h2><span class="sec-tag">Geometría · Kepler · Historia</span>
+      </div>
+      <div class="prose fi">
+        <p>Un <strong>analema</strong> es la curva cerrada que traza la posición aparente de un cuerpo celeste cuando se
+          observa desde la superficie de un planeta a la <em>misma hora solar media</em> durante un ciclo orbital
+          completo. La palabra procede del griego ἀνάλημμα («soporte de reloj solar») y fue usada en su sentido
+          astronómico moderno por John Flamsteed en 1672 (Flamsteed, 1672; Morrison, 1988).</p>
+        <p>La forma resultante es la <strong>signatura visual de dos fenómenos físicos</strong> que actúan
+          simultáneamente. Si ambos fuesen nulos, el analema degeneraría en un punto único e inmóvil.</p>
+      </div>
+      <div class="two-col fi">
+        <div class="icard">
+          <h3>Efecto I — Excentricidad orbital</h3>
+          <p>Las órbitas son elipses con el Sol en un foco (1.ª ley de Kepler). Por la 2.ª ley (ley de las áreas), el
+            planeta avanza más rápido en el perihelio y más lento en el afelio. Esta velocidad no uniforme hace que el
+            Sol «llegue» tarde o temprano respecto a un reloj de tiempo uniforme (Meeus, 1998, pp. 183–185).</p>
+        </div>
+        <div class="icard">
+          <h3>Efecto II — Oblicuidad axial</h3>
+          <p>El eje de rotación está inclinado respecto al plano orbital (oblicuidad ε). Esta inclinación hace que la
+            proyección de la trayectoria solar sobre el ecuador celeste sea no uniforme a lo largo del año, generando
+            también la componente norte–sur del analema. El efecto es máximo en los equinoccios (Müller, 1995;
+            USNO/HMNAO, 2024).</p>
+        </div>
+      </div>
+      <div class="pull-quote fi">
+        <p>«El analema es la proyección bidimensional de la ecuación del tiempo: la discrepancia acumulada entre el
+          tiempo solar verdadero y el tiempo solar medio, inscrita en el cielo como una geometría perpetua.»</p>
+        <cite>— Müller, M. (1995). Equation of time — Problem in astronomy. <em>Acta Physica Polonica A</em>,
+          88(S-49).</cite>
+      </div>
+      <div class="prose fi">
+        <p>Los analemas aparecen en globos terráqueos desde el s. XVII como pequeñas figuras en «8» en el Océano
+          Pacífico: herramientas de corrección para navegantes y relojeros. La primera fotografía compuesta del analema
+          solar fue realizada por Dennis di Cicco en 1978–1979 (di Cicco, 1979).</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 02 ══ -->
+  <section id="matematica">
+    <div class="wrap">
+      <div class="sec-head fi"><span class="sec-n">02 —</span>
+        <h2 class="sec-t">Formalismo matemático</h2><span class="sec-tag">Ecuación del tiempo · Series de Fourier</span>
+      </div>
+      <div class="prose fi">
+        <p>El analema se calcula a partir de la <strong>ecuación del tiempo</strong> E(t), diferencia entre el ángulo
+          horario del Sol verdadero y el del Sol medio ficticio. Se descompone en dos términos físicamente
+          independientes (Duffett-Smith, 1990; Meeus, 1998, cap. 27):</p>
+      </div>
+      <div class="fbox fi">
+        <div class="fbox-ttl">Ecuación del tiempo — descomposición en series</div>
+        <div class="fline"><span class="v">E</span>(t) = <span class="v">E</span><sub>exc</sub>(t) + <span
+            class="v">E</span><sub>obl</sub>(t)</div>
+        <div class="fline" style="margin-top:0.6rem"><span class="v">E</span><sub>exc</sub> = −2<span
+            class="v">e</span>·sin(<span class="v">M</span>) + <sup>5</sup>/<sub>4</sub><span
+            class="v">e</span>²·sin(2<span class="v">M</span>) − <sup>13</sup>/<sub>12</sub><span
+            class="v">e</span>³·sin(3<span class="v">M</span>) + O(<span class="v">e</span>⁴)<span class="c">←
+            excentricidad</span></div>
+        <div class="fline"><span class="v">E</span><sub>obl</sub> = −tan²(<span class="v">ε</span>/2)·sin(2<span
+            class="v">λ</span>) + ½tan⁴(<span class="v">ε</span>/2)·sin(4<span class="v">λ</span>) − ⅓tan⁶(<span
+            class="v">ε</span>/2)·sin(6<span class="v">λ</span>) + ···<span class="c">← oblicuidad</span></div>
+        <div class="fdefs">
+          <div class="fdef"><span class="v">e</span> — excentricidad orbital</div>
+          <div class="fdef"><span class="v">M</span> — anomalía media: M = 2πt/T</div>
+          <div class="fdef"><span class="v">ε</span> — oblicuidad axial (rad)</div>
+          <div class="fdef"><span class="v">λ</span> — longitud eclíptica solar (rad)</div>
+          <div class="fdef"><span class="v">T</span> — período orbital sidéreo (días)</div>
+          <div class="fdef"><span class="v">t</span> — tiempo desde perihelio (días)</div>
+        </div>
+      </div>
+      <div class="fbox fi">
+        <div class="fbox-ttl">Ecuación de Kepler — solución Newton-Raphson</div>
+        <div class="fline"><span class="v">E</span> − <span class="v">e</span>·sin(<span class="v">E</span>) = <span
+            class="v">M</span><span class="c">← E = anomalía excéntrica; |ΔE| &lt; 10⁻¹¹</span></div>
+        <div class="fline"><span class="v">r</span> = <span class="v">a</span>(1−<span class="v">e</span>²) / (1 + <span
+            class="v">e</span>·cos<span class="v">θ</span>)<span class="c">← radio vector heliocéntrico</span></div>
+        <div class="fline"><span class="v">θ</span> = 2 arctan[√((1+<span class="v">e</span>)/(1−<span
+            class="v">e</span>)) · tan(<span class="v">E</span>/2)]<span class="c">← anomalía verdadera</span></div>
+      </div>
+      <div class="fbox fi">
+        <div class="fbox-ttl">Coordenadas del analema (sistema ecuatorial)</div>
+        <div class="fline">Eje <span class="v">X</span> = <span class="v">α</span>(t) − <span
+            class="v">α</span><sub>medio</sub>(t) ≡ <span class="v">E</span>(t)<span class="c">← ascensión recta
+            corregida</span></div>
+        <div class="fline">Eje <span class="v">Y</span> = <span class="v">δ</span>(t) = arcsin(sin<span
+            class="v">ε</span> · sin<span class="v">λ</span>)<span class="c">← declinación geocéntrica</span></div>
+      </div>
+      <div class="two-col fi">
+        <div class="icard">
+          <h3>Figura en «8» asimétrica</h3>
+          <p>Cuando ε ∈ [15°,35°] y e &lt; 0.1, los dos efectos forman la clásica «8» asimétrica. El lóbulo mayor
+            corresponde al hemisferio donde el perihelio coincide con el solsticio de invierno (Müller, 1995). La
+            Tierra, Marte y Saturno son los ejemplos más citados.</p>
+        </div>
+        <div class="icard">
+          <h3>Morfotipos extremos</h3>
+          <p>Con ε ≈ 97.8° (Urano) el analema tiende a una gran elipse. Con e = 0.206 (Mercurio) domina E<sub>exc</sub>.
+            Con ε ≈ 3.1° (Júpiter) el analema se aplana en un segmento casi vertical (Hale &amp; Doggett, 1982;
+            Seidelmann, 1992).</p>
+        </div>
+      </div>
+      <div class="hbox fi">
+        <h3>Magnitudes de la ecuación del tiempo terrestre</h3>
+        <p>E(t) alcanza hasta ±16 min. Extremos: ~12 feb (−14.2 min), ~14 may (+3.7 min), ~26 jul (−6.5 min), ~3 nov
+          (+16.4 min). Los cuatro extremos corresponden a dE/dt = 0. E<sub>exc</sub> maximiza cerca del perihelio (3
+          enero) y E<sub>obl</sub> en los equinoccios (Duffett-Smith, 1990; Meeus, 1998, pp. 183–192).</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 03 ══ -->
+  <section id="solar">
+    <div class="wrap">
+      <div class="sec-head fi"><span class="sec-n">03 —</span>
+        <h2 class="sec-t">Analema solar terrestre</h2><span class="sec-tag">Simulación interactiva · 365 días</span>
+      </div>
+      <div class="ly-solar fi">
+        <div>
+          <div class="ccard">
+            <canvas id="solar-canvas" width="560" height="520"
+              aria-label="Animación del analema solar terrestre. Muestra la curva en forma de 8 asimétrica, con un punto que se desplaza día a día y marcas mensuales."
+              role="img"></canvas>
+            <div class="ctoolbar">
+              <label for="solar-spd">Velocidad</label>
+              <input type="range" id="solar-spd" min="1" max="40" value="10" step="1" aria-valuemin="1"
+                aria-valuemax="40" aria-valuenow="10" aria-label="Velocidad de animación">
+              <span class="slbl" id="solar-spd-lbl" aria-live="polite">10×</span>
+              <button id="solar-play" class="on" aria-label="Pausar animación">Pausar</button>
+              <button id="solar-reset" aria-label="Reiniciar animación">↺ Reiniciar</button>
+              <button id="solar-complete" aria-label="Completar año">Completar</button>
+            </div>
+          </div>
+          <div class="legrow" style="margin-top:0.45rem">
+            <div class="legitem"><span class="ldot" style="background:var(--warm2)"></span>Posición actual</div>
+            <div class="legitem"><span class="lseg" style="background:var(--hi2)"></span>Estela anual</div>
+            <div class="legitem"><span class="ldot" style="background:var(--warm);opacity:0.7"></span>Marcador mensual
+            </div>
+          </div>
+        </div>
+        <div class="sidecol">
+          <div class="dcard">
+            <div class="dcard-t">Estado en tiempo real</div>
+            <div class="drow" role="status" aria-live="polite"><span class="dk">Día del año</span><span class="dv"
+                id="sol-day">1</span></div>
+            <div class="drow" role="status" aria-live="polite"><span class="dk">Ec. del tiempo</span><span class="dv"
+                id="sol-eq">0.0 min</span></div>
+            <div class="drow" role="status" aria-live="polite"><span class="dk">Declinación solar</span><span class="dv"
+                id="sol-decl">0.0°</span></div>
+            <div class="drow" role="status" aria-live="polite"><span class="dk">Progreso</span><span class="dv"
+                id="sol-pct">0%</span></div>
+          </div>
+          <div class="dcard">
+            <div class="dcard-t">Parámetros (J2000.0)</div>
+            <div class="drow"><span class="dk">Excentricidad e</span><span class="dv">0.016710</span></div>
+            <div class="drow"><span class="dk">Oblicuidad ε</span><span class="dv">23.440°</span></div>
+            <div class="drow"><span class="dk">Período orbital</span><span class="dv">365.25 d</span></div>
+            <div class="drow"><span class="dk">Perihelio</span><span class="dv">~3 enero</span></div>
+            <div class="drow"><span class="dk">Afelio</span><span class="dv">~4 julio</span></div>
+          </div>
+          <div class="shapec">
+            <div class="sn">Figura en 8 asimétrica</div>
+            <div class="sd">El lóbulo inferior (nov–ene) es mayor porque el perihelio terrestre ocurre en invierno
+              boreal, amplificando la variación de velocidad orbital. Los extremos izq./dcha. marcan E(t) = ±16 min.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="prose fi" style="margin-top:1.8rem">
+        <p>La primera demostración fotográfica fue realizada por Dennis di Cicco en 1978–1979 mediante exposiciones
+          múltiples sobre el mismo negativo, mostrando 44 posiciones del Sol formando la figura en «8» (di Cicco, 1979).
+          El método ha sido replicado digitalmente por múltiples astrofotógrafos (Ayiomamitis, 2003).</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 04 ══ -->
+  <section id="planetas">
+    <div class="wrap">
+      <div class="sec-head fi"><span class="sec-n">04 —</span>
+        <h2 class="sec-t">Analemas planetarios geocéntricos</h2><span class="sec-tag">Retrogradaciones · Períodos
+          sinódicos</span>
+      </div>
+      <div class="prose fi">
+        <p>Al observar un <strong>planeta exterior desde la Tierra</strong> a la misma hora local, su posición incluye
+          lazos de retrogradación: la Tierra adelanta a los planetas exteriores en su órbita, produciendo movimiento
+          aparente retrógrado durante semanas o meses (Meeus, 1998, cap. 36).</p>
+        <p>El analema planetario se rige por el <strong>período sinódico</strong> S:</p>
+      </div>
+      <div class="fbox fi" style="max-width:460px">
+        <div class="fbox-ttl">Período sinódico</div>
+        <div class="fline">1/<span class="v">S</span> = |1/<span class="v">T</span><sub>⊕</sub> − 1/<span
+            class="v">T</span><sub>P</sub>|<span class="c">← válido para exterior e interior</span></div>
+      </div>
+      <div class="planet-bar fi" id="planet-bar" role="group" aria-label="Selección de planeta"></div>
+      <div class="ly2 fi">
+        <div>
+          <div class="ccard">
+            <canvas id="planet-canvas" width="620" height="480"
+              aria-label="Simulación del analema planetario geocéntrico. Muestra el movimiento aparente del planeta seleccionado, con segmentos de color para movimiento directo (azul) y retrógrado (rojo)."
+              role="img"></canvas>
+            <div class="ctoolbar">
+              <label for="pl-spd">Velocidad</label>
+              <input type="range" id="pl-spd" min="1" max="80" value="25" step="1" aria-label="Velocidad de animación" aria-valuemin="1" aria-valuemax="80" aria-valuenow="25">
+              <span class="slbl" id="pl-spd-lbl">25×</span>
+              <button id="pl-play" class="on" aria-label="Pausar animación">Pausar</button>
+              <button id="pl-reset" aria-label="Reiniciar">↺ Reiniciar</button>
+              <button id="pl-complete" aria-label="Completar ciclo">Completar</button>
+            </div>
+          </div>
+          <div class="legrow" style="margin-top:0.45rem">
+            <div class="legitem"><span class="lseg" style="background:var(--hi2)"></span>Movimiento directo</div>
+            <div class="legitem"><span class="lseg" style="background:#c03030"></span>Retrogradación</div>
+            <div class="legitem"><span class="ldot" id="leg-pdot" style="background:var(--warm2)"></span><span
+                id="leg-pname">Planeta sel.</span></div>
+          </div>
+        </div>
+        <div class="sidecol">
+          <div class="dcard">
+            <div class="dcard-t">Estado</div>
+            <div class="drow" role="status" aria-live="polite"><span class="dk">Días</span><span class="dv"
+                id="pl-day">0</span></div>
+            <div class="drow" role="status" aria-live="polite"><span class="dk">Elongación</span><span class="dv"
+                id="pl-elong">0.0°</span></div>
+            <div class="drow" role="status" aria-live="polite"><span class="dk">Fase sinódica</span><span class="dv"
+                id="pl-pct">0%</span></div>
+            <div class="drow" role="status" aria-live="polite"><span class="dk">Retrógrado</span><span class="dv"
+                id="pl-retro">No</span></div>
+          </div>
+          <div class="dcard">
+            <div class="dcard-t" id="pl-head">—</div>
+            <div class="drow"><span class="dk">P. sinódico</span><span class="dv" id="pl-syn">—</span></div>
+            <div class="drow"><span class="dk">Dur. retrogr.</span><span class="dv" id="pl-retdur">—</span></div>
+            <div class="drow"><span class="dk">Excentricidad</span><span class="dv" id="pl-ecc">—</span></div>
+            <div class="drow"><span class="dk">Morfología</span><span class="dv" id="pl-shv">—</span></div>
+          </div>
+          <div class="shapec">
+            <div class="sn" id="pl-shname">—</div>
+            <div class="sd" id="pl-shdesc">Selecciona un planeta.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 05 ══ -->
+  <section id="venus">
+    <div class="wrap">
+      <div class="sec-head fi"><span class="sec-n">05 —</span>
+        <h2 class="sec-t">El pentagrama de Venus</h2><span class="sec-tag">Resonancia 8:13:5 · Ciclo 8 años</span>
+      </div>
+      <div class="ly-venus fi">
+        <div>
+          <div class="ccard">
+            <canvas id="venus-canvas" width="540" height="540"
+              aria-label="Pentagrama de Venus: ciclo de 8 años que dibuja una estrella de 5 puntas. Las elongaciones máximas Este (naranja) y Oeste (azul) forman los vértices."
+              role="img"></canvas>
+            <div class="ctoolbar">
+              <label for="ven-spd">Velocidad</label>
+              <input type="range" id="ven-spd" min="1" max="80" value="30" step="1" aria-label="Velocidad de animación" aria-valuemin="1" aria-valuemax="80" aria-valuenow="30">
+              <span class="slbl" id="ven-spd-lbl">30×</span>
+              <button id="ven-play" class="on" aria-label="Pausar animación">Pausar</button>
+              <button id="ven-reset" aria-label="Reiniciar">↺ Reiniciar</button>
+              <button id="ven-complete" aria-label="Ver ciclo de 8 años">Ver 8 años</button>
+            </div>
+          </div>
+          <div class="legrow" style="margin-top:0.45rem">
+            <div class="legitem"><span class="ldot" style="background:var(--warm2)"></span>Elongación Este</div>
+            <div class="legitem"><span class="ldot" style="background:var(--hi2)"></span>Elongación Oeste</div>
+          </div>
+        </div>
+        <div>
+          <div class="prose">
+            <p>En lugar de una figura en «8», Venus traza un <strong>pentagrama perfecto</strong> que se cierra cada 8
+              años terrestres (Bretagnon &amp; Simon, 1986). Esto se debe a una resonancia orbital casi exacta:</p>
+          </div>
+          <div class="fbox" style="margin:1rem 0">
+            <div class="fbox-ttl">Resonancia orbital 8 : 13 : 5</div>
+            <div class="fline">8 años terrestres ≈ 2921.94 d</div>
+            <div class="fline">13 órbitas venusianas ≈ 2921.11 d</div>
+            <div class="fline">5 períodos sinódicos ≈ 2919.60 d</div>
+            <div class="fline" style="margin-top:0.35rem;color:var(--ink4);font-size:0.7rem">Error residual: ~2.3 días
+              en 8 años (0.08%)</div>
+            <div class="fline" style="color:var(--ink4);font-size:0.7rem">Ángulo entre elongaciones: 360° / 5 = 72°
+            </div>
+          </div>
+          <div class="prose">
+            <p>Cada elongación máxima de Venus ocurre <strong>72° más adelante</strong> en el zodíaco, colocando los
+              cinco vértices del pentagrama con precisión geométrica.</p>
+          </div>
+          <div class="dcard" style="margin-top:1rem">
+            <div class="dcard-t">Estado — Venus</div>
+            <div class="drow" role="status" aria-live="polite"><span class="dk">Días</span><span class="dv"
+                id="ven-day">0</span></div>
+            <div class="drow" role="status" aria-live="polite"><span class="dk">Años</span><span class="dv"
+                id="ven-yr">0.00</span></div>
+            <div class="drow" role="status" aria-live="polite"><span class="dk">Elongación</span><span class="dv"
+                id="ven-elong">0.0°</span></div>
+            <div class="drow" role="status" aria-live="polite"><span class="dk">Ciclo 8 años</span><span class="dv"
+                id="ven-cyc">0%</span></div>
+          </div>
+          <div class="hbox" style="margin-top:1rem">
+            <h3>Astronomía maya — Códice de Dresde</h3>
+            <p>El Códice de Dresde (ca. s. XI–XIII) contiene 384 años de observaciones de Venus con extraordinaria
+              precisión (Aveni, 2001; Bricker &amp; Bricker, 2011). El período sinódico venusiano (2920 = 8×365 = 5×584
+              días) estaba integrado en el sistema calendárico maya.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 06 ══ -->
+  <section id="tabla">
+    <div class="wrap">
+      <div class="sec-head fi"><span class="sec-n">06 —</span>
+        <h2 class="sec-t">Comparativa del sistema solar</h2><span class="sec-tag">Parámetros J2000.0 · JPL Planetary
+          Fact Sheets</span>
+      </div>
+      <div class="prose fi">
+        <p>Parámetros tomados de los <em>Planetary Fact Sheets</em> del JPL (Williams, 2024) y del <em>Astronomical
+            Almanac</em> (USNO/HMNAO, 2024).</p>
+      </div>
+      <div class="dtable-wrap fi">
+        <table class="dtable">
+          <thead>
+            <tr>
+              <th>Cuerpo</th>
+              <th>e</th>
+              <th>ε</th>
+              <th>T sidéreo</th>
+              <th>S sinódico*</th>
+              <th>Morfología</th>
+              <th>Nota</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span style="color:#f0c040">●</span> Sol / Tierra</td>
+              <td class="mn">0.01671</td>
+              <td class="mn">23.44°</td>
+              <td class="mn">365.25 d</td>
+              <td class="mn">365.25 d</td>
+              <td><span class="pill">8 asimétrico</span></td>
+              <td>E(t) ∈ [−14, +16] min. Di Cicco (1979)</td>
+            </tr>
+            <tr>
+              <td><span style="color:#b0c0d0">●</span> Luna</td>
+              <td class="mn">0.05490</td>
+              <td class="mn">6.68°</td>
+              <td class="mn">27.32 d</td>
+              <td class="mn">29.53 d</td>
+              <td><span class="pill">Óvalo inclinado</span></td>
+              <td>Ciclo mensual. Inclinación orbital 5.14°</td>
+            </tr>
+            <tr>
+              <td><span style="color:#909098">●</span> Mercurio</td>
+              <td class="mn">0.20560</td>
+              <td class="mn">0.034°</td>
+              <td class="mn">87.97 d</td>
+              <td class="mn">115.9 d</td>
+              <td><span class="pill">Lazo compacto</span></td>
+              <td>Elongación máx. 18°–28°. Alta e domina E(t)</td>
+            </tr>
+            <tr>
+              <td><span style="color:#e8a030">●</span> Venus</td>
+              <td class="mn">0.00677</td>
+              <td class="mn">177.4°</td>
+              <td class="mn">224.7 d</td>
+              <td class="mn">583.9 d</td>
+              <td><span class="pill">Pentagrama 8 años</span></td>
+              <td>Resonancia 8:13:5. Cinco elongaciones</td>
+            </tr>
+            <tr>
+              <td><span style="color:#c85830">●</span> Marte</td>
+              <td class="mn">0.09340</td>
+              <td class="mn">25.19°</td>
+              <td class="mn">686.9 d</td>
+              <td class="mn">779.9 d</td>
+              <td><span class="pill">Bucle variable</span></td>
+              <td>Retrogradaciones variables perih./afél.</td>
+            </tr>
+            <tr>
+              <td><span style="color:#c0a060">●</span> Júpiter</td>
+              <td class="mn">0.04890</td>
+              <td class="mn">3.13°</td>
+              <td class="mn">4 332 d</td>
+              <td class="mn">398.9 d</td>
+              <td><span class="pill">Bucles uniformes</span></td>
+              <td>~1 retrograd./año. P ≈ 12 años zodíaco</td>
+            </tr>
+            <tr>
+              <td><span style="color:#a88848">●</span> Saturno</td>
+              <td class="mn">0.05650</td>
+              <td class="mn">26.73°</td>
+              <td class="mn">10 759 d</td>
+              <td class="mn">378.1 d</td>
+              <td><span class="pill">Bucles regulares</span></td>
+              <td>P ≈ 29.5 años. Retrogr. ≈ 138 días/año</td>
+            </tr>
+            <tr>
+              <td><span style="color:#40c0a8">●</span> Urano</td>
+              <td class="mn">0.04720</td>
+              <td class="mn">97.77°</td>
+              <td class="mn">30 589 d</td>
+              <td class="mn">369.7 d</td>
+              <td><span class="pill">Bucles densos</span></td>
+              <td>P ≈ 84 años. ε extrema invierte el analema</td>
+            </tr>
+            <tr>
+              <td><span style="color:#2858b8">●</span> Neptuno</td>
+              <td class="mn">0.00860</td>
+              <td class="mn">28.32°</td>
+              <td class="mn">60 182 d</td>
+              <td class="mn">367.5 d</td>
+              <td><span class="pill">Bucles estáticos</span></td>
+              <td>P ≈ 165 años. Analema casi invariante</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="font-family:var(--mono);font-size:0.55rem;color:var(--ink4);margin-top:0.3rem">* Período sinódico
+        respecto a la Tierra. Fuentes: Williams (2024), USNO/HMNAO (2024).</p>
+      <div class="two-col fi" style="margin-top:1.8rem">
+        <div class="icard">
+          <h3>Analemas en otros planetas</h3>
+          <p>Cada planeta tiene su analema solar propio. En Marte (ε = 25.2°, e = 0.093): «8» casi simétrica. En Júpiter
+            (ε = 3.1°): línea casi vertical. En Urano (ε = 97.8°): elipse grande. Calculados por Hale &amp; Doggett
+            (1982) y Waugh (1973, cap. 7).</p>
+        </div>
+        <div class="icard">
+          <h3>Cuerpos menores y exoplanetas</h3>
+          <p>Plutón (e = 0.249, ε = 119.6°) generaría uno de los analemas más complejos. En exoplanetas con e &gt; 0.3 y
+            oblicuidades arbitrarias los analemas pueden ser espirales abiertas (Dobrovolskis, 2013; Heller et al.,
+            2011).</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 07 ══ -->
+  <section id="referencias">
+    <div class="wrap">
+      <div class="sec-head fi"><span class="sec-n">07 —</span>
+        <h2 class="sec-t">Referencias bibliográficas</h2><span class="sec-tag">Norma APA 7.ª edición</span>
+      </div>
+      <div class="prose fi" style="margin-bottom:1.4rem">
+        <p>Las referencias siguen la 7.ª edición del manual APA (APA, 2020). Parámetros orbitales: fuentes [13], [17] y
+          [18]. Algoritmos numéricos: [8] y [13].</p>
+      </div>
+      <ol class="ref-list fi">
+        <li>American Psychological Association. (2020). <em>Publication manual of the American Psychological
+            Association</em> (7.ª ed.). APA. <a
+            href="https://doi.org/10.1037/0000165-000">https://doi.org/10.1037/0000165-000</a></li>
+        <li>Aveni, A. F. (2001). <em>Skywatchers of ancient Mexico</em> (2.ª ed.). University of Texas Press.</li>
+        <li>Ayiomamitis, A. (2003). A composite photograph of the solar analemma. <em>Sky &amp; Telescope</em>,
+          <em>105</em>(3), 42–45.</li>
+        <li>Bretagnon, P., &amp; Simon, J.-L. (1986). <em>Planetary programs and tables from −4000 to +2800</em>.
+          Willmann-Bell.</li>
+        <li>Bricker, V. R., &amp; Bricker, H. M. (2011). <em>Astronomy in the Maya codices</em>. American Philosophical
+          Society.</li>
+        <li>di Cicco, D. (1979, junio). The analemma. <em>Sky &amp; Telescope</em>, <em>57</em>(6), 536–540.</li>
+        <li>Dobrovolskis, A. R. (2013). Insolation patterns on exoplanets for various obliquities and orbital
+          eccentricities. <em>Icarus</em>, <em>226</em>(1), 760–776. <a
+            href="https://doi.org/10.1016/j.icarus.2013.06.026">https://doi.org/10.1016/j.icarus.2013.06.026</a></li>
+        <li>Duffett-Smith, P. (1990). <em>Astronomy with your personal computer</em> (2.ª ed.). Cambridge University
+          Press.</li>
+        <li>Flamsteed, J. (1672). De inaequalitate dierum solarium. <em>Philosophical Transactions of the Royal
+            Society</em>, <em>7</em>(81), 1099–1105. <a
+            href="https://doi.org/10.1098/rstl.1672.0034">https://doi.org/10.1098/rstl.1672.0034</a></li>
+        <li>Hale, A. S., &amp; Doggett, L. E. (1982). Analemmas for other planets. <em>Journal of the Royal Astronomical
+            Society of Canada</em>, <em>76</em>(6), 355–362.</li>
+        <li>Heller, R., Leconte, J., &amp; Barnes, R. (2011). Tidal obliquity evolution of potentially habitable
+          planets. <em>Astronomy &amp; Astrophysics</em>, <em>528</em>, A27. <a
+            href="https://doi.org/10.1051/0004-6361/201015817">https://doi.org/10.1051/0004-6361/201015817</a></li>
+        <li>Hunger, H., &amp; Pingree, D. (1999). <em>Astral sciences in Mesopotamia</em>. Brill.</li>
+        <li>Meeus, J. (1998). <em>Astronomical algorithms</em> (2.ª ed.). Willmann-Bell.</li>
+        <li>Morrison, J. E. (1988). The equation of time. <em>Journal of Navigation</em>, <em>41</em>(1), 92–102. <a
+            href="https://doi.org/10.1017/S0373463300006992">https://doi.org/10.1017/S0373463300006992</a></li>
+        <li>Müller, M. (1995). Equation of time — Problem in astronomy. <em>Acta Physica Polonica A</em>,
+          <em>88</em>(Supl.), S-49.</li>
+        <li>Seidelmann, P. K. (Ed.). (1992). <em>Explanatory supplement to the astronomical almanac</em> (rev. ed.).
+          University Science Books.</li>
+        <li>U.S. Naval Observatory &amp; H.M. Nautical Almanac Office. (2024). <em>The astronomical almanac for the year
+            2024</em>. U.S. Government Publishing Office / UKHO.</li>
+        <li>Waugh, A. E. (1973). <em>Sundials: Their theory and construction</em>. Dover Publications.</li>
+        <li>Williams, D. R. (2024). <em>Planetary fact sheets</em>. NASA Goddard Space Flight Center. <a
+            href="https://nssdc.gsfc.nasa.gov/planetary/factsheet/">https://nssdc.gsfc.nasa.gov/planetary/factsheet/</a>
+        </li>
+      </ol>
+      <div class="hbox fi" style="margin-top:2rem">
+        <h3>Nota metodológica</h3>
+        <p>Ecuación de Kepler resuelta por Newton-Raphson con |ΔE| &lt; 10⁻¹¹ (&lt; 12 iteraciones para e &lt; 0.3).
+          Parámetros J2000.0 de Williams (2024). La ecuación del tiempo se calcula con precisión O(e³) y hasta el sexto
+          armónico en tan(ε/2), reproduciendo el <em>Astronomical Almanac</em> con error &lt; 30 s (Meeus, 1998, pp.
+          183–185). Simulaciones planetarias en coordenadas heliocéntricas eclípticas proyectadas sobre el ecuador
+          celeste con ε = 23.44°.</p>
+      </div>
+    </div>
+  </section>
+
+  </main>
+
+  <footer>
+    <div class="footer-in">
+      <div class="footer-l">
+        Analemas — Mecánica Orbital y Geometría Celeste<br>
+        Basado en Meeus (1998) · Parámetros NASA JPL
+      </div>
+      <div class="footer-r">
+        Web creada por
+        <a href="https://www.linkedin.com/in/sandra-fern%C3%A1ndez-dom%C3%ADnguez-31836a323/" target="_blank" rel="noopener noreferrer">Sandra
+          Fernández Domínguez</a> y
+        <a href="https://github.com/abarriuso" target="_blank" rel="noopener noreferrer">Adrián Barriuso Pizarro</a><br>
+        J2000.0 · Newton-Raphson · Coordenadas ecuatoriales
+      </div>
+    </div>
+  </footer>
+
+</body>
+
+</html>
