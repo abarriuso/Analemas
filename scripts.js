@@ -7,18 +7,11 @@
   const TAU = Math.PI * 2;
   const DEG = Math.PI / 180;
 
-  // Parámetros orbitales terrestres J2000.0 (Meeus 1998, Williams 2024)
+  // Parámetros orbitales terrestres J2000.0 (Standish 1992, JPL/USNO)
   const EPS0 = 23.4392911 * DEG;    // oblicuidad del eje terrestre (rad)
   const ECC0 = 0.016708634;          // excentricidad orbital terrestre
-  // Longitud geocéntrica del Sol en el perihelio = ϖ⊕ + 180° ≈ 282.94°
-  // (ϖ⊕ ≈ 102.94° heliocéntrico; el Sol se ve desde la Tierra a 282.94° en ene. 3)
-  const LON_PERIHELION = 282.9372 * DEG;
-
-  // Potencias de tan(ε/2) para la ecuación del tiempo (término de oblicuidad)
-  const _t2 = Math.tan(EPS0 / 2);
-  const TE2 = _t2;                   // tan(ε/2)
-  const TE4 = _t2 * _t2 * _t2 * _t2; // tan⁴(ε/2)
-  const TE6 = TE4 * _t2 * _t2;       // tan⁶(ε/2)
+  const OMEGA_EARTH = 102.9372 * DEG;  // longitud heliocéntrica del perihelio terrestre ϖ⊕
+  const M0_EARTH = 357.5293 * DEG;     // anomalía media terrestre en J2000.0 (1.5 ene 2000)
 
   // Rendimiento y dispositivo
   const FRAME_TIME = 1000 / 60;      // ~16.67 ms → cap a 60 fps
@@ -53,36 +46,55 @@
     return E;
   }
 
-  // Posición en órbita kepleriana (heliocéntrica en el plano orbital)
-  function orbPos(a, e, T, t, L0) {
-    const M = (L0 + TAU * t / T) % TAU;
+  // Posición heliocéntrica en el sistema eclíptico (+x hacia el equinoccio vernal).
+  //   a        semieje mayor (UA)
+  //   e        excentricidad
+  //   T        período sidéreo (días)
+  //   M0       anomalía media en t = 0 (J2000.0)
+  //   t        tiempo desde J2000.0 (días)
+  //   lonPeri  longitud heliocéntrica del perihelio ϖ (rad)
+  // Devuelve {x, y, M, nu, L} en coordenadas eclípticas heliocéntricas reales.
+  function orbPos(a, e, T, M0, t, lonPeri) {
+    let M = (M0 + TAU * t / T) % TAU;
+    if (M < 0) M += TAU;
     const E = keplerE(M, e);
     const nu = 2 * Math.atan2(
       Math.sqrt(1 + e) * Math.sin(E / 2),
       Math.sqrt(1 - e) * Math.cos(E / 2)
     );
     const r = a * (1 - e * e) / (1 + e * Math.cos(nu));
-    return { x: r * Math.cos(nu), y: r * Math.sin(nu), nu };
+    const L = nu + lonPeri;
+    return { x: r * Math.cos(L), y: r * Math.sin(L), M, nu, L };
   }
 
-  // Ecuación del tiempo E(t) en radianes (Meeus 1998, cap. 27)
-  // E(t) = E_exc(t) + E_obl(t)
-  // E_exc: serie en e (excentricidad)
-  // E_obl: serie en tan(ε/2) (oblicuidad)
-  function equationOfTime(M, nu, e) {
-    const lam = (nu + LON_PERIHELION) % TAU;
-    const exc =
-      -2 * e * Math.sin(M) +
-      (5 * e * e / 4) * Math.sin(2 * M) -
-      (13 * e * e * e / 12) * Math.sin(3 * M);
-    const obl =
-      TE2 * TE2 * Math.sin(2 * lam) -
-      (TE4 / 2) * Math.sin(4 * lam) +
-      (TE6 / 3) * Math.sin(6 * lam);
-    return exc + obl;
+  // Posición heliocéntrica 3D con inclinación: rotación estándar del plano
+  // orbital a la eclíptica con i (inclinación) y Ω (longitud del nodo
+  // ascendente), Meeus 1998, cap. 33. el = {a, e, T, M0, lonPeri, i, O}.
+  function orbPosInc(el, t) {
+    let M = (el.M0 + TAU * t / el.T) % TAU;
+    if (M < 0) M += TAU;
+    const E = keplerE(M, el.e);
+    const nu = 2 * Math.atan2(
+      Math.sqrt(1 + el.e) * Math.sin(E / 2),
+      Math.sqrt(1 - el.e) * Math.cos(E / 2)
+    );
+    const r = el.a * (1 - el.e * el.e) / (1 + el.e * Math.cos(nu));
+    const u = (el.lonPeri - el.O) + nu; // argumento de la latitud ω + ν
+    const cu = Math.cos(u), su = Math.sin(u);
+    const cO = Math.cos(el.O), sO = Math.sin(el.O), ci = Math.cos(el.i);
+    return {
+      x: r * (cO * cu - sO * su * ci),
+      y: r * (sO * cu + cO * su * ci),
+      z: r * su * Math.sin(el.i)
+    };
   }
 
   // Genera los puntos del analema solar (2001 pasos = un año completo)
+  // E(t) = E_exc(t) + E_obl(t), con E = tiempo solar verdadero − tiempo medio
+  // (Meeus 1998, cap. 28; Hughes, Yallop & Hohenkerk 1989):
+  //   E_exc = −C (ecuación del centro, O(e³))
+  //   E_obl: serie en y = tan²(ε/2): y·sin2λ − (y²/2)·sin4λ + (y³/3)·sin6λ
+  // Validación reproducible frente al Astronomical Almanac: node validacion.mjs
   function generateSolarAnalemaPoints(epsRad = EPS0, ecc = ECC0) {
     const pts = [];
     const steps = 2000;
@@ -92,15 +104,13 @@
     const t6 = t4 * t2 * t2;
     for (let i = 0; i <= steps; i++) {
       const d = (i / steps) * T;
-      const M = TAU * d / T;
-      const E = keplerE(M, ecc);
-      const nu = 2 * Math.atan2(
-        Math.sqrt(1 + ecc) * Math.sin(E / 2),
-        Math.sqrt(1 - ecc) * Math.cos(E / 2)
-      );
-      const lam = (nu + LON_PERIHELION) % TAU;
+      const ep = orbPos(1, ecc, T, M0_EARTH, d, OMEGA_EARTH);
+      const M = ep.M;
+      // Longitud eclíptica geocéntrica del Sol = dirección Tierra → Sol
+      let lam = Math.atan2(-ep.y, -ep.x);
+      if (lam < 0) lam += TAU;
       const exc =
-        -2 * ecc * Math.sin(M) +
+        -(2 * ecc - ecc * ecc * ecc / 4) * Math.sin(M) -
         (5 * ecc * ecc / 4) * Math.sin(2 * M) -
         (13 * ecc * ecc * ecc / 12) * Math.sin(3 * M);
       const obl =
@@ -122,6 +132,10 @@
 
   // Precalculo del analema solar con parámetros J2000.0
   const SOLAR_PTS = generateSolarAnalemaPoints();
+
+  // Min/max sobre arrays grandes sin spread (evita stack overflow y alocación temporal)
+  function arrayMin(arr) { let m = arr[0]; for (let i = 1; i < arr.length; i++) if (arr[i] < m) m = arr[i]; return m; }
+  function arrayMax(arr) { let m = arr[0]; for (let i = 1; i < arr.length; i++) if (arr[i] > m) m = arr[i]; return m; }
 
   // =========================================================================
   // 2. Starfield (fondo estelar animado)
@@ -287,36 +301,8 @@
     const dpr = window.devicePixelRatio || 1;
     let animationId = null;
 
-    function generateAnalemaPoints(epsRad, ecc) {
-      const pts = [];
-      const steps = 2000;
-      const T = 365.25;
-      const t2 = Math.tan(epsRad / 2);
-      const t4 = t2 * t2 * t2 * t2;
-      const t6 = t4 * t2 * t2;
-      for (let i = 0; i <= steps; i++) {
-        const d = (i / steps) * T;
-        const M = TAU * d / T;
-        const E = keplerE(M, ecc);
-        const nu = 2 * Math.atan2(
-          Math.sqrt(1 + ecc) * Math.sin(E / 2),
-          Math.sqrt(1 - ecc) * Math.cos(E / 2)
-        );
-        const lam = (nu + LON_PERIHELION) % TAU;
-        const exc = -2 * ecc * Math.sin(M) + (5 * ecc * ecc / 4) * Math.sin(2 * M) - (13 * ecc * ecc * ecc / 12) * Math.sin(3 * M);
-        const obl = t2 * t2 * Math.sin(2 * lam) - (t4 / 2) * Math.sin(4 * lam) + (t6 / 3) * Math.sin(6 * lam);
-        const eqT = exc + obl;
-        const decl = Math.asin(Math.sin(epsRad) * Math.sin(lam));
-        pts.push({ x: eqT, y: decl, em: eqT * (180 / Math.PI) * 4, dd: decl * 180 / Math.PI, day: d });
-      }
-      return pts;
-    }
-
-    function arrayMin(arr) { let m = arr[0]; for (let i = 1; i < arr.length; i++) if (arr[i] < m) m = arr[i]; return m; }
-    function arrayMax(arr) { let m = arr[0]; for (let i = 1; i < arr.length; i++) if (arr[i] > m) m = arr[i]; return m; }
-
     function updateAnalema() {
-      currentPoints = generateAnalemaPoints(currentEps, currentEcc);
+      currentPoints = generateSolarAnalemaPoints(currentEps, currentEcc);
       const xs = currentPoints.map(p => p.x);
       const ys = currentPoints.map(p => p.y);
       xc = (arrayMin(xs) + arrayMax(xs)) / 2;
@@ -361,14 +347,27 @@
       { name: 'SOLSTICIO DIC', day: 355.5, color: '#e9c46a', xOff: -75, yOff: 16 }
     ];
 
-    function draw(ts) {
-      if (baseWidth === 0 || baseHeight === 0) { animationId = requestAnimationFrame(draw); return; }
-      if (ts - lastTimestamp < FRAME_TIME) { animationId = requestAnimationFrame(draw); return; }
-      lastTimestamp = ts;
-      if (currentPoints.length === 0) { animationId = requestAnimationFrame(draw); return; }
+    let heroInView = true;
+    const heroObs = new IntersectionObserver(es => {
+      es.forEach(e => { heroInView = e.isIntersecting; });
+    }, { threshold: 0 });
+    heroObs.observe(cv);
 
-      animProgress += ANIM_SPEED;
-      if (animProgress > 1) animProgress = 0;
+    function draw(ts) {
+      animationId = requestAnimationFrame(draw);
+      if (!heroInView) return;
+      if (baseWidth === 0 || baseHeight === 0) return;
+      if (ts - lastTimestamp < FRAME_TIME) return;
+      lastTimestamp = ts;
+      if (currentPoints.length === 0) return;
+
+      if (!prefersReducedMotion) {
+        animProgress += ANIM_SPEED;
+        if (animProgress > 1) animProgress = 0;
+      } else if (animProgress === 0) {
+        // Mostrar la curva completa con el indicador en el perihelio
+        animProgress = 1;
+      }
       const currentPoint = animProgress * currentPoints.length;
 
       ctx.clearRect(0, 0, baseWidth, baseHeight);
@@ -420,11 +419,10 @@
       ctx.beginPath(); ctx.arc(cx, cy, 4, 0, TAU); ctx.fillStyle = CDOT(); ctx.fill();
 
       ctx.fillStyle = CTTL();
-      ctx.font = `${Math.max(6, Math.round(6 * dpr))}px "JetBrains Mono", monospace`;
+      ctx.font = `${isMobile ? 7 : 9}px "JetBrains Mono", monospace`;
       ctx.textAlign = 'right';
       ctx.fillText('J2000.0 · Parámetros dinámicos', baseWidth * 0.47, -baseHeight * 0.47 + 14);
       ctx.restore();
-      animationId = requestAnimationFrame(draw);
     }
     animationId = requestAnimationFrame(draw);
   })();
@@ -437,21 +435,25 @@
     const cv = document.getElementById('solar-canvas');
     if (!cv) return;
     const ctx = cv.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
     let animationId = null;
     let lastFrame = 0;
+    let logicW = 0, logicH = 0;
 
     function setSize() {
       const w = Math.min(560, window.innerWidth - 32);
       const h = Math.round(w * 520 / 560);
-      cv.width = w; cv.height = h;
+      logicW = w; logicH = h;
+      cv.width = Math.round(w * dpr);
+      cv.height = Math.round(h * dpr);
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.scale(dpr, dpr);
     }
     setSize();
     let solarResizeTimer;
     window.addEventListener('resize', () => { clearTimeout(solarResizeTimer); solarResizeTimer = setTimeout(setSize, 200); });
 
-    // Precomputa los rangos del analema solar (solo una vez, evita spread en arrays grandes)
-    function arrayMin(arr) { let m = arr[0]; for (let i = 1; i < arr.length; i++) if (arr[i] < m) m = arr[i]; return m; }
-    function arrayMax(arr) { let m = arr[0]; for (let i = 1; i < arr.length; i++) if (arr[i] > m) m = arr[i]; return m; }
+    // Precomputa los rangos del analema solar (solo una vez)
     const sXs = SOLAR_PTS.map(p => p.x), sYs = SOLAR_PTS.map(p => p.y);
     const sXmin = arrayMin(sXs), sXmax = arrayMax(sXs);
     const sYmin = arrayMin(sYs), sYmax = arrayMax(sYs);
@@ -461,6 +463,20 @@
 
     const MONTHS = [['ENE', 0], ['FEB', 31], ['MAR', 59], ['ABR', 90], ['MAY', 120],
       ['JUN', 151], ['JUL', 181], ['AGO', 212], ['SEP', 243], ['OCT', 273], ['NOV', 304], ['DIC', 334]];
+
+    // Refs DOM cacheadas (A6)
+    const ref = {
+      spd:      document.getElementById('solar-spd'),
+      spdLbl:   document.getElementById('solar-spd-lbl'),
+      play:     document.getElementById('solar-play'),
+      reset:    document.getElementById('solar-reset'),
+      complete: document.getElementById('solar-complete'),
+      day:      document.getElementById('sol-day'),
+      eq:       document.getElementById('sol-eq'),
+      decl:     document.getElementById('sol-decl'),
+      pct:      document.getElementById('sol-pct')
+    };
+    let inView = false;
 
     function updatePlayBtn(btn) {
       if (!btn) return;
@@ -475,9 +491,11 @@
     }
 
     function draw(ts) {
-      if (ts - lastFrame < FRAME_TIME) { animationId = requestAnimationFrame(draw); return; }
+      animationId = requestAnimationFrame(draw);
+      if (!inView) return;
+      if (ts - lastFrame < FRAME_TIME) return;
       lastFrame = ts;
-      const W = cv.width, H = cv.height;
+      const W = logicW, H = logicH;
       const xm = isMobile ? 36 : 56, ym = isMobile ? 32 : 42;
       const MX = v => xm + (v - X0) / (X1 - X0) * (W - 2 * xm);
       const MY = v => H - ym - (v - Y0) / (Y1 - Y0) * (H - 2 * ym);
@@ -500,14 +518,13 @@
       ctx.closePath(); ctx.strokeStyle = CBLUE(0.07); ctx.lineWidth = 1; ctx.stroke();
 
       // Avance de la animación
-      const playBtn = document.getElementById('solar-play');
       if (solarState.playing && solarState.day < SOLAR_PTS.length - 1) {
-        const s = parseInt(document.getElementById('solar-spd').value);
+        const s = parseInt(ref.spd.value);
         solarState.day += s * 0.12;
         if (solarState.day >= SOLAR_PTS.length - 1) {
           solarState.day = SOLAR_PTS.length - 1;
           solarState.playing = false;
-          updatePlayBtn(playBtn);
+          updatePlayBtn(ref.play);
         }
       }
 
@@ -541,85 +558,86 @@
         ctx.strokeStyle = 'rgba(255,255,255,0.45)'; ctx.lineWidth = 1.2; ctx.stroke();
         ctx.beginPath(); ctx.arc(MX(cp.x), MY(cp.y), 11, 0, TAU);
         ctx.strokeStyle = CWARM(0.16); ctx.lineWidth = 1.5; ctx.stroke();
-        const dayEl = document.getElementById('sol-day');
-        const eqEl = document.getElementById('sol-eq');
-        const declEl = document.getElementById('sol-decl');
-        const pctEl = document.getElementById('sol-pct');
-        if (dayEl) dayEl.textContent = Math.floor(cp.day + 1);
-        if (eqEl) eqEl.textContent = cp.em.toFixed(1) + ' min';
-        if (declEl) declEl.textContent = cp.dd.toFixed(2) + '°';
-        if (pctEl) pctEl.textContent = Math.round(100 * end / (SOLAR_PTS.length - 1)) + '%';
+        if (ref.day)  ref.day.textContent  = Math.floor(cp.day + 1);
+        if (ref.eq)   ref.eq.textContent   = cp.em.toFixed(1) + ' min';
+        if (ref.decl) ref.decl.textContent = cp.dd.toFixed(2) + '°';
+        if (ref.pct)  ref.pct.textContent  = Math.round(100 * end / (SOLAR_PTS.length - 1)) + '%';
       }
 
       // Etiquetas de ejes
       ctx.fillStyle = CLBL();
       ctx.font = `${lblSize} JetBrains Mono,monospace`;
       ctx.textAlign = 'center';
-      ctx.fillText('← O   ECUACIÓN DEL TIEMPO E(t)   E →', W / 2, H - 5);
+      // E > 0 (Sol adelantado): el Sol verdadero está al Oeste del meridiano
+      // al mediodía medio, visto desde el hemisferio norte mirando al sur.
+      ctx.fillText('← E   ECUACIÓN DEL TIEMPO E(t)   O →', W / 2, H - 5);
       ctx.save(); ctx.translate(13, H / 2); ctx.rotate(-Math.PI / 2);
       ctx.fillText('DECLINACIÓN δ', 0, 0); ctx.restore();
       ctx.fillStyle = CTTL();
       ctx.font = '500 10px JetBrains Mono,monospace';
       ctx.textAlign = 'left';
       ctx.fillText('ANALEMA SOLAR TERRESTRE · J2000.0', xm, isMobile ? 14 : 20);
-
-      animationId = requestAnimationFrame(draw);
     }
 
-    // Lazy start via IntersectionObserver
+    // Observer: pausa el trabajo pesado cuando el canvas sale del viewport (A5).
+    // Si prefersReducedMotion, no auto-iniciar la animación: mostrar la curva completa.
     const solarSection = document.getElementById('solar');
     const solarObs = new IntersectionObserver(entries => {
       entries.forEach(entry => {
-        if (entry.isIntersecting && !solarState.started) {
-          solarState.started = true; solarState.playing = true;
-          const btn = document.getElementById('solar-play');
-          if (btn) { btn.textContent = 'Pausar'; btn.className = 'on'; }
+        inView = entry.isIntersecting;
+        if (inView && !solarState.started) {
+          solarState.started = true;
+          if (prefersReducedMotion) {
+            solarState.day = SOLAR_PTS.length - 1;
+            solarState.playing = false;
+            updatePlayBtn(ref.play);
+          } else {
+            solarState.playing = true;
+            if (ref.play) { ref.play.textContent = 'Pausar'; ref.play.className = 'on'; }
+          }
           animationId = requestAnimationFrame(draw);
-          solarObs.disconnect();
         }
       });
     }, { threshold: 0.25 });
     if (solarSection) solarObs.observe(solarSection);
 
-    const spdSlider = document.getElementById('solar-spd');
-    if (spdSlider) spdSlider.addEventListener('input', function () {
-      const lbl = document.getElementById('solar-spd-lbl');
-      if (lbl) lbl.textContent = this.value + '×';
+    if (ref.spd) ref.spd.addEventListener('input', function () {
+      if (ref.spdLbl) ref.spdLbl.textContent = this.value + '×';
     });
 
-    const playBtn = document.getElementById('solar-play');
-    if (playBtn) playBtn.addEventListener('click', () => {
+    if (ref.play) ref.play.addEventListener('click', () => {
       if (!solarState.started) { solarState.started = true; animationId = requestAnimationFrame(draw); }
       solarState.playing = !solarState.playing;
-      updatePlayBtn(playBtn);
+      updatePlayBtn(ref.play);
     });
 
-    const resetBtn = document.getElementById('solar-reset');
-    if (resetBtn) resetBtn.addEventListener('click', () => {
+    if (ref.reset) ref.reset.addEventListener('click', () => {
       solarState.day = 0; solarState.playing = true;
       if (!solarState.started) { solarState.started = true; animationId = requestAnimationFrame(draw); }
-      updatePlayBtn(playBtn);
+      updatePlayBtn(ref.play);
     });
 
-    const completeBtn = document.getElementById('solar-complete');
-    if (completeBtn) completeBtn.addEventListener('click', () => {
+    if (ref.complete) ref.complete.addEventListener('click', () => {
       solarState.day = SOLAR_PTS.length - 1; solarState.playing = false;
       if (!solarState.started) { solarState.started = true; animationId = requestAnimationFrame(draw); }
-      updatePlayBtn(playBtn);
+      updatePlayBtn(ref.play);
     });
   })();
 
   // =========================================================================
   // 5. Planetas — analemas geocéntricos
   // =========================================================================
+  // Elementos orbitales J2000.0 (Standish 1992, Mean Elements EMB / JPL).
+  //   lonPeri = ϖ longitud heliocéntrica del perihelio (rad)
+  //   M0      = anomalía media en J2000.0 (rad) = L0 − ϖ
   const planetsData = [
-    { id: 'mercury', name: 'Mercurio', color: '#909098', a: 0.387, e: 0.2056, T: 87.97,  syn: 115.9,  L0: 0.40,  synStr: '115.9 d',  rDur: '~22 d',   eccS: '0.2056', shape: 'Lazo compacto',      shapeD: 'Elongación máx. 18°–28° por la alta excentricidad. Nunca más de 28° del Sol (Meeus, 1998, cap. 36).' },
-    { id: 'venus',   name: 'Venus',    color: '#e8a030', a: 0.723, e: 0.0067, T: 224.701,syn: 583.92, L0: 3.176, synStr: '583.9 d',  rDur: '~40 d',   eccS: '0.0067', shape: 'Pentagrama (8 años)', shapeD: 'Cinco elongaciones en 8 años forman una estrella de 5 puntas por la resonancia 8:13:5 (Bretagnon & Simon, 1986).' },
-    { id: 'mars',    name: 'Marte',    color: '#c85830', a: 1.524, e: 0.0934, T: 686.97, syn: 779.94, L0: 1.20,  synStr: '779.9 d',  rDur: '~72 d',   eccS: '0.0934', shape: 'Bucle variable',      shapeD: 'Retrogradaciones muy variables según oposición perihélica o afélica. La excentricidad moderada genera bucles irregulares (Meeus, 1998).' },
-    { id: 'jupiter', name: 'Júpiter',  color: '#c0a060', a: 5.203, e: 0.0489, T: 4332.6, syn: 398.88, L0: 0.80,  synStr: '398.9 d',  rDur: '~121 d',  eccS: '0.0489', shape: 'Bucles uniformes',    shapeD: '~1 retrogradación/año. Bucles casi idénticos por la baja excentricidad. ~30°/año en el zodíaco (P ≈ 12 años).' },
-    { id: 'saturn',  name: 'Saturno',  color: '#a88848', a: 9.537, e: 0.0565, T: 10759,  syn: 378.09, L0: 3.50,  synStr: '378.1 d',  rDur: '~138 d',  eccS: '0.0565', shape: 'Bucles regulares',    shapeD: 'P ≈ 29.5 años. Retrogradaciones anuales (~138 días) predecibles y casi idénticas.' },
-    { id: 'uranus',  name: 'Urano',    color: '#40c0a8', a: 19.19, e: 0.0472, T: 30589,  syn: 369.66, L0: 5.10,  synStr: '369.7 d',  rDur: '~151 d',  eccS: '0.0472', shape: 'Bucles densos',      shapeD: 'Mag +5.7. 84 años para completar el zodíaco. ε = 97.77° invertiría el analema solar.' },
-    { id: 'neptune', name: 'Neptuno',  color: '#2858b8', a: 30.07, e: 0.0086, T: 60182,  syn: 367.49, L0: 2.20,  synStr: '367.5 d',  rDur: '~158 d',  eccS: '0.0086', shape: 'Bucles estáticos',   shapeD: 'Mag +7.8. 165 años para analema completo. Movimiento propio ~2°/año. Excentricidad mínima.' }
+    { id: 'mercury', name: 'Mercurio', color: '#909098', a: 0.38710, e: 0.20563, T: 87.969,   syn: 115.9,  lonPeri: 77.4561  * DEG, M0: 174.7948 * DEG, synStr: '115.9 d',  rDur: '~22 d',   eccS: '0.2056', shape: 'Lazo compacto',      shapeD: 'Elongación máx. 17.9°–27.8°: el rango varía por la alta excentricidad. Nunca se aleja más de ~28° del Sol (Meeus, 1998).' },
+    { id: 'venus',   name: 'Venus',    color: '#e8a030', a: 0.72333, e: 0.00677, T: 224.701,  syn: 583.92, lonPeri: 131.5637 * DEG, M0:  50.4161 * DEG, synStr: '583.9 d',  rDur: '~40 d',   eccS: '0.0067', shape: 'Pentagrama (8 años)', shapeD: 'Cinco conjunciones inferiores en ~8 años dibujan un pentagrama aproximado por la casi-resonancia 8:13:5; el patrón deriva ~2.3° por ciclo (Aveni, 2001).' },
+    { id: 'mars',    name: 'Marte',    color: '#c85830', a: 1.52366, e: 0.09339, T: 686.980,  syn: 779.94, lonPeri: 336.0408 * DEG, M0:  19.4125 * DEG, synStr: '779.9 d',  rDur: '~72 d',   eccS: '0.0934', shape: 'Bucle variable',      shapeD: 'Retrogradaciones muy variables según oposición perihélica o afélica. La excentricidad moderada genera bucles irregulares (Meeus, 1998).' },
+    { id: 'jupiter', name: 'Júpiter',  color: '#c0a060', a: 5.20336, e: 0.04839, T: 4332.59,  syn: 398.88, lonPeri:  14.7283 * DEG, M0:  19.6761 * DEG, synStr: '398.9 d',  rDur: '~121 d',  eccS: '0.0484', shape: 'Bucles uniformes',    shapeD: '~1 retrogradación/año. Bucles casi idénticos por la baja excentricidad. ~30°/año en el zodíaco (P ≈ 12 años).' },
+    { id: 'saturn',  name: 'Saturno',  color: '#a88848', a: 9.53707, e: 0.05415, T: 10759.22, syn: 378.09, lonPeri:  92.5984 * DEG, M0: 317.3460 * DEG, synStr: '378.1 d',  rDur: '~138 d',  eccS: '0.0542', shape: 'Bucles regulares',    shapeD: 'P ≈ 29.5 años. Retrogradaciones anuales (~138 días) predecibles y casi idénticas.' },
+    { id: 'uranus',  name: 'Urano',    color: '#40c0a8', a: 19.19126, e: 0.04717, T: 30685.4, syn: 369.66, lonPeri: 170.9543 * DEG, M0: 142.2778 * DEG, synStr: '369.7 d',  rDur: '~151 d',  eccS: '0.0472', shape: 'Bucles densos',      shapeD: 'Mag +5.7. 84 años para recorrer el zodíaco. Su rotación es retrógrada (ε = 97.77°), lo que haría extremo su analema solar local.' },
+    { id: 'neptune', name: 'Neptuno',  color: '#2858b8', a: 30.06896, e: 0.00859, T: 60189,   syn: 367.49, lonPeri:  44.9648 * DEG, M0: 259.9152 * DEG, synStr: '367.5 d',  rDur: '~158 d',  eccS: '0.0086', shape: 'Bucles estáticos',   shapeD: 'Mag +7.8. 165 años para recorrer el zodíaco. Movimiento propio ~2°/año. Excentricidad mínima.' }
   ];
 
   let selectedPlanet = planetsData[2]; // Marte por defecto
@@ -634,7 +652,7 @@
   }
 
   function computePlanetPoints(p) {
-    const ee = ECC0, Te = 365.25;
+    const Te = 365.25;
     const steps = isMobile ? 400 : 600;
     const totalDays = Math.min(p.syn * 2, 1800);
     const dt = totalDays / steps;
@@ -643,25 +661,21 @@
 
     for (let i = 0; i <= steps; i++) {
       const d = i * dt;
-      const pe = orbPos(1, ee, Te, d, 0);
-      const pp = orbPos(p.a, p.e, p.T, d, p.L0);
+      const pe = orbPos(1, ECC0, Te, M0_EARTH, d, OMEGA_EARTH);
+      const pp = orbPos(p.a, p.e, p.T, p.M0, d, p.lonPeri);
       const dx = pp.x - pe.x, dy = pp.y - pe.y;
+      // Longitud y declinación eclípticas geocéntricas reales del planeta (β = 0)
       const lon = Math.atan2(dy, dx);
       const decl = Math.asin(Math.sin(EPS0) * Math.sin(lon));
       const ra = Math.atan2(Math.cos(EPS0) * Math.sin(lon), Math.cos(lon));
-      const Me = TAU * d / Te;
-      const Eke = keplerE(Me, ee);
-      const nue = 2 * Math.atan2(
-        Math.sqrt(1 + ee) * Math.sin(Eke / 2),
-        Math.sqrt(1 - ee) * Math.cos(Eke / 2)
-      );
-      const sunLon = (nue + LON_PERIHELION) % TAU;
+      // Posición eclíptica geocéntrica del Sol = −r_Tierra
+      const sunLon = Math.atan2(-pe.y, -pe.x);
       const sunRA = Math.atan2(Math.cos(EPS0) * Math.sin(sunLon), Math.cos(sunLon));
       let dRA = ra - sunRA;
       if (dRA > Math.PI) dRA -= TAU;
       if (dRA < -Math.PI) dRA += TAU;
 
-      // Retrogradación robusta: movimiento retrógrado cuando δlon < 0 dos frames seguidos
+      // Retrogradación robusta: δlon < 0 dos frames seguidos
       let retro = false;
       if (prevLon !== null) {
         let delta = lon - prevLon;
@@ -672,11 +686,10 @@
       }
       prevLon = lon;
 
-      const earthToSun = { x: -pe.x, y: -pe.y };
-      const earthToPlanet = { x: dx, y: dy };
-      const dot = earthToSun.x * earthToPlanet.x + earthToSun.y * earthToPlanet.y;
-      const mag1 = Math.hypot(earthToSun.x, earthToSun.y);
-      const mag2 = Math.hypot(earthToPlanet.x, earthToPlanet.y);
+      const earthToSunX = -pe.x, earthToSunY = -pe.y;
+      const dot = earthToSunX * dx + earthToSunY * dy;
+      const mag1 = Math.hypot(earthToSunX, earthToSunY);
+      const mag2 = Math.hypot(dx, dy);
       const elong = Math.acos(Math.max(-1, Math.min(1, dot / (mag1 * mag2)))) * 180 / Math.PI;
 
       pts.push({ x: dRA, y: decl, day: d, retro, elong });
@@ -698,9 +711,8 @@
     if (legName) legName.textContent = p.name;
   }
 
-  window.selPlan = function (id) {
+  function selPlan(id) {
     selectedPlanet = planetsData.find(p => p.id === id);
-    planetCache.delete(id); // solo invalida el planeta seleccionado
     document.querySelectorAll('.pbtn').forEach(b => b.classList.remove('on'));
     const activeBtn = document.getElementById('pb-' + id);
     if (activeBtn) activeBtn.classList.add('on');
@@ -708,7 +720,7 @@
     const playBtn = document.getElementById('pl-play');
     if (playBtn) { playBtn.textContent = 'Pausar'; playBtn.className = 'on'; playBtn.classList.remove('ended'); }
     updatePlanetInfo(selectedPlanet);
-  };
+  }
 
   // Botones de selección de planeta
   (function () {
@@ -731,17 +743,37 @@
     const cv = document.getElementById('planet-canvas');
     if (!cv) return;
     const ctx = cv.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
     let animationId = null;
     let lastFrame = 0;
+    let logicW = 0, logicH = 0;
 
     function setSize() {
       const w = Math.min(620, window.innerWidth - 32);
       const h = Math.round(w * 480 / 620);
-      cv.width = w; cv.height = h;
+      logicW = w; logicH = h;
+      cv.width = Math.round(w * dpr);
+      cv.height = Math.round(h * dpr);
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.scale(dpr, dpr);
     }
     setSize();
     let plResizeTimer;
     window.addEventListener('resize', () => { clearTimeout(plResizeTimer); plResizeTimer = setTimeout(setSize, 200); });
+
+    // Refs DOM cacheadas (A6)
+    const ref = {
+      spd:      document.getElementById('pl-spd'),
+      spdLbl:   document.getElementById('pl-spd-lbl'),
+      play:     document.getElementById('pl-play'),
+      reset:    document.getElementById('pl-reset'),
+      complete: document.getElementById('pl-complete'),
+      day:      document.getElementById('pl-day'),
+      elong:    document.getElementById('pl-elong'),
+      pct:      document.getElementById('pl-pct'),
+      retro:    document.getElementById('pl-retro')
+    };
+    let inView = false;
 
     function updatePlayBtn(btn, pts) {
       if (!btn) return;
@@ -751,15 +783,14 @@
       else { btn.textContent = 'Reanudar'; btn.className = ''; }
     }
 
-    function arrayMin(arr) { let m = arr[0]; for (let i = 1; i < arr.length; i++) if (arr[i] < m) m = arr[i]; return m; }
-    function arrayMax(arr) { let m = arr[0]; for (let i = 1; i < arr.length; i++) if (arr[i] > m) m = arr[i]; return m; }
-
     function draw(ts) {
-      if (ts - lastFrame < FRAME_TIME) { animationId = requestAnimationFrame(draw); return; }
+      animationId = requestAnimationFrame(draw);
+      if (!inView) return;
+      if (ts - lastFrame < FRAME_TIME) return;
       lastFrame = ts;
       const p = selectedPlanet;
       const pts = getPlanetPoints(p);
-      const W = cv.width, H = cv.height;
+      const W = logicW, H = logicH;
       ctx.clearRect(0, 0, W, H); ctx.fillStyle = CBG(); ctx.fillRect(0, 0, W, H);
 
       // Rango local del planeta seleccionado (corregido: no usa xs/ys del solar canvas)
@@ -791,14 +822,13 @@
       ctx.strokeStyle = p.color + '18'; ctx.lineWidth = 1; ctx.stroke();
 
       // Avance
-      const playBtn = document.getElementById('pl-play');
       if (planetState.playing && planetState.day < pts.length - 1) {
-        const s = parseInt(document.getElementById('pl-spd').value);
+        const s = parseInt(ref.spd.value);
         planetState.day += s * 0.11;
         if (planetState.day >= pts.length - 1) {
           planetState.day = pts.length - 1;
           planetState.playing = false;
-          updatePlayBtn(playBtn, pts);
+          updatePlayBtn(ref.play, pts);
         }
       }
 
@@ -817,14 +847,10 @@
         ctx.strokeStyle = 'rgba(255,255,255,0.45)'; ctx.lineWidth = 1.2; ctx.stroke();
         ctx.beginPath(); ctx.arc(MX(cp.x), MY(cp.y), 10, 0, TAU);
         ctx.strokeStyle = p.color + '28'; ctx.lineWidth = 1.5; ctx.stroke();
-        const dayEl = document.getElementById('pl-day');
-        const elongEl = document.getElementById('pl-elong');
-        const pctEl = document.getElementById('pl-pct');
-        const retroEl = document.getElementById('pl-retro');
-        if (dayEl) dayEl.textContent = Math.round(cp.day).toLocaleString('es-ES');
-        if (elongEl) elongEl.textContent = cp.elong.toFixed(1) + '°';
-        if (pctEl) pctEl.textContent = Math.round(100 * end / (pts.length - 1)) + '%';
-        if (retroEl) { retroEl.textContent = cp.retro ? 'Sí' : 'No'; retroEl.style.color = cp.retro ? '#e05555' : ''; }
+        if (ref.day)   ref.day.textContent   = Math.round(cp.day).toLocaleString('es-ES');
+        if (ref.elong) ref.elong.textContent = cp.elong.toFixed(1) + '°';
+        if (ref.pct)   ref.pct.textContent   = Math.round(100 * end / (pts.length - 1)) + '%';
+        if (ref.retro) { ref.retro.textContent = cp.retro ? 'Sí' : 'No'; ref.retro.style.color = cp.retro ? '#e05555' : ''; }
       }
 
       const lblSize = isMobile ? '7px' : '10px';
@@ -838,50 +864,50 @@
       ctx.font = `500 ${lblSize} JetBrains Mono,monospace`;
       ctx.textAlign = 'left';
       ctx.fillText(`ANALEMA DE ${p.name.toUpperCase()} · GEOCÉNTRICO`, xm, isMobile ? 14 : 19);
-
-      animationId = requestAnimationFrame(draw);
     }
 
     const planetSection = document.getElementById('planetas');
     const planetObs = new IntersectionObserver(entries => {
       entries.forEach(entry => {
-        if (entry.isIntersecting && !planetState.started) {
-          planetState.started = true; planetState.playing = true;
-          const btn = document.getElementById('pl-play');
-          if (btn) { btn.textContent = 'Pausar'; btn.className = 'on'; }
+        inView = entry.isIntersecting;
+        if (inView && !planetState.started) {
+          planetState.started = true;
+          if (prefersReducedMotion) {
+            const pts = getPlanetPoints(selectedPlanet);
+            planetState.day = pts.length - 1;
+            planetState.playing = false;
+            updatePlayBtn(ref.play, pts);
+          } else {
+            planetState.playing = true;
+            if (ref.play) { ref.play.textContent = 'Pausar'; ref.play.className = 'on'; }
+          }
           animationId = requestAnimationFrame(draw);
-          planetObs.disconnect();
         }
       });
     }, { threshold: 0.25 });
     if (planetSection) planetObs.observe(planetSection);
 
-    const spdSlider = document.getElementById('pl-spd');
-    if (spdSlider) spdSlider.addEventListener('input', function () {
-      const lbl = document.getElementById('pl-spd-lbl');
-      if (lbl) lbl.textContent = this.value + '×';
+    if (ref.spd) ref.spd.addEventListener('input', function () {
+      if (ref.spdLbl) ref.spdLbl.textContent = this.value + '×';
     });
 
-    const playBtn = document.getElementById('pl-play');
-    if (playBtn) playBtn.addEventListener('click', () => {
-      if (!planetState.started) { planetState.started = true; requestAnimationFrame(draw); }
+    if (ref.play) ref.play.addEventListener('click', () => {
+      if (!planetState.started) { planetState.started = true; animationId = requestAnimationFrame(draw); }
       planetState.playing = !planetState.playing;
-      updatePlayBtn(playBtn, getPlanetPoints(selectedPlanet));
+      updatePlayBtn(ref.play, getPlanetPoints(selectedPlanet));
     });
 
-    const resetBtn = document.getElementById('pl-reset');
-    if (resetBtn) resetBtn.addEventListener('click', () => {
+    if (ref.reset) ref.reset.addEventListener('click', () => {
       planetState.day = 0; planetState.playing = true;
-      if (!planetState.started) { planetState.started = true; requestAnimationFrame(draw); }
-      updatePlayBtn(playBtn, getPlanetPoints(selectedPlanet));
+      if (!planetState.started) { planetState.started = true; animationId = requestAnimationFrame(draw); }
+      updatePlayBtn(ref.play, getPlanetPoints(selectedPlanet));
     });
 
-    const completeBtn = document.getElementById('pl-complete');
-    if (completeBtn) completeBtn.addEventListener('click', () => {
+    if (ref.complete) ref.complete.addEventListener('click', () => {
       const pts = getPlanetPoints(selectedPlanet);
       planetState.day = pts.length - 1; planetState.playing = false;
-      if (!planetState.started) { planetState.started = true; requestAnimationFrame(draw); }
-      updatePlayBtn(playBtn, pts);
+      if (!planetState.started) { planetState.started = true; animationId = requestAnimationFrame(draw); }
+      updatePlayBtn(ref.play, pts);
     });
   })();
 
@@ -892,14 +918,20 @@
     const cv = document.getElementById('venus-canvas');
     if (!cv) return;
     const ctx = cv.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
     let animationId = null;
     let lastFrame = 0;
+    let logicW = 0, logicH = 0;
     const TOTAL_DAYS = Math.round(8 * 365.25); // 2922 días
     const venusState = { day: 0, playing: false, started: false };
 
     function setSize() {
       const w = Math.min(540, window.innerWidth - 32);
-      cv.width = w; cv.height = w;
+      logicW = w; logicH = w;
+      cv.width = Math.round(w * dpr);
+      cv.height = Math.round(w * dpr);
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.scale(dpr, dpr);
     }
     setSize();
     let venResizeTimer;
@@ -908,40 +940,78 @@
       venResizeTimer = setTimeout(() => { setSize(); precompute(); }, 200);
     });
 
-    // Precalcula las posiciones diarias de Venus (elongación + longitud eclíptica geocéntrica)
+    // Precalcula las posiciones diarias de Venus en sistema eclíptico geocéntrico
+    // 3D. Elementos J2000.0 (Standish et al. 1992): a = 0.72333 UA, e = 0.00677,
+    // T = 224.701 d, ϖ = 131.5637°, M0 = 50.4161°, i = 3.39471°, Ω = 76.68069°.
+    // Con la inclinación incluida, la elongación mínima en conjunción inferior
+    // es 0.2°–8° (el modelo reproduce el tránsito del 8 jun 2004 con 0.18°), de
+    // modo que la trayectoria ya no atraviesa artificialmente el disco solar.
+    // Se calculan 600 días extra para localizar la 6.ª conjunción inferior y
+    // mostrar la deriva del pentagrama (la resonancia 8:13:5 no es exacta).
     let vPts = [];
-    let maxElongs = [];
+    let maxElongs = [];   // máximas elongaciones vespertinas/matutinas
+    let infConjs = [];    // conjunciones inferiores: vértices del pentagrama
+    const EXTRA_DAYS = 600;
 
     function precompute() {
       vPts = [];
-      for (let d = 0; d <= TOTAL_DAYS; d++) {
-        const pe = orbPos(1, ECC0, 365.25, d, 0);
-        const pv = orbPos(0.723, 0.0067, 224.701, d, 3.176);
-        const dx = pv.x - pe.x, dy = pv.y - pe.y;
+      const V = {
+        a: 0.72333, e: 0.00677, T: 224.701, M0: 50.4161 * DEG,
+        lonPeri: 131.5637 * DEG, i: 3.39471 * DEG, O: 76.68069 * DEG
+      };
+      for (let d = 0; d <= TOTAL_DAYS + EXTRA_DAYS; d++) {
+        const pe = orbPos(1, ECC0, 365.25, M0_EARTH, d, OMEGA_EARTH);
+        const pv = orbPosInc(V, d);
+        const dx = pv.x - pe.x, dy = pv.y - pe.y, dz = pv.z; // Tierra en z ≈ 0
         const lon = Math.atan2(dy, dx); // longitud eclíptica geocéntrica de Venus
-        const earthToSun = { x: -pe.x, y: -pe.y };
-        const earthToPlanet = { x: dx, y: dy };
-        const dot = earthToSun.x * earthToPlanet.x + earthToSun.y * earthToPlanet.y;
-        const mag1 = Math.hypot(earthToSun.x, earthToSun.y);
-        const mag2 = Math.hypot(earthToPlanet.x, earthToPlanet.y);
-        const elong = Math.acos(Math.max(-1, Math.min(1, dot / (mag1 * mag2)))) * 180 / Math.PI;
-        const cross = earthToSun.x * earthToPlanet.y - earthToSun.y * earthToPlanet.x;
+        const sunX = -pe.x, sunY = -pe.y;
+        const dot = sunX * dx + sunY * dy;
+        const sunDist = Math.hypot(sunX, sunY);      // distancia Tierra–Sol
+        const venDist = Math.hypot(dx, dy, dz);      // distancia Tierra–Venus
+        const elong = Math.acos(Math.max(-1, Math.min(1, dot / (sunDist * venDist)))) * 180 / Math.PI;
+        const cross = sunX * dy - sunY * dx;
         const isEast = cross > 0;
-        vPts.push({ day: d, lon, elong, isEast });
+        const isInferior = venDist < sunDist;        // Venus entre Sol y Tierra
+        vPts.push({ day: d, lon, elong, isEast, isInferior });
       }
 
-      // Detecta máximas elongaciones (máximos locales con elongación > 20°)
+      // Máximas elongaciones (máximos locales, rango del modelo: 45.4°–47.1°)
       maxElongs = [];
       for (let i = 1; i < vPts.length - 1; i++) {
         if (vPts[i].elong > vPts[i - 1].elong &&
-          vPts[i].elong > vPts[i + 1].elong &&
-          vPts[i].elong > 20) {
+          vPts[i].elong >= vPts[i + 1].elong &&
+          vPts[i].elong > 20 && vPts[i].day <= TOTAL_DAYS) {
           maxElongs.push(vPts[i]);
+        }
+      }
+      // Conjunciones inferiores (mínimos locales de elongación con Venus entre
+      // Tierra y Sol). Incluye la 6.ª (fuera del ciclo de 8 años) para mostrar
+      // el no-cierre del pentagrama: Δλ ≈ −2.25° por ciclo en este modelo.
+      infConjs = [];
+      for (let i = 1; i < vPts.length - 1; i++) {
+        if (vPts[i].isInferior &&
+          vPts[i].elong < vPts[i - 1].elong &&
+          vPts[i].elong <= vPts[i + 1].elong) {
+          infConjs.push(vPts[i]);
         }
       }
     }
 
     precompute();
+
+    // Refs DOM cacheadas (A6)
+    const ref = {
+      spd:      document.getElementById('ven-spd'),
+      spdLbl:   document.getElementById('ven-spd-lbl'),
+      play:     document.getElementById('ven-play'),
+      reset:    document.getElementById('ven-reset'),
+      complete: document.getElementById('ven-complete'),
+      day:      document.getElementById('ven-day'),
+      yr:       document.getElementById('ven-yr'),
+      elong:    document.getElementById('ven-elong'),
+      cyc:      document.getElementById('ven-cyc')
+    };
+    let inView = false;
 
     // Convierte un punto (lon, elong) a coordenadas canvas polares
     // Radio = elongación normalizada; ángulo = longitud eclíptica geocéntrica
@@ -962,10 +1032,12 @@
     }
 
     function draw(ts) {
-      if (ts - lastFrame < FRAME_TIME) { animationId = requestAnimationFrame(draw); return; }
+      animationId = requestAnimationFrame(draw);
+      if (!inView) return;
+      if (ts - lastFrame < FRAME_TIME) return;
       lastFrame = ts;
 
-      const W = cv.width, H = cv.height;
+      const W = logicW, H = logicH;
       const cx = W / 2, cy = H / 2;
       const R = Math.min(W, H) * 0.42;
       const MAX_ELONG = 48;
@@ -974,13 +1046,12 @@
       ctx.fillStyle = CBG(); ctx.fillRect(0, 0, W, H);
 
       // Avance de animación
-      const playBtn = document.getElementById('ven-play');
       if (venusState.playing && venusState.day < TOTAL_DAYS) {
-        const spd = parseInt(document.getElementById('ven-spd')?.value || 30);
+        const spd = parseInt(ref.spd?.value || 30);
         venusState.day = Math.min(venusState.day + spd * 0.15, TOTAL_DAYS);
         if (venusState.day >= TOTAL_DAYS) {
           venusState.playing = false;
-          updatePlayBtn(playBtn);
+          updatePlayBtn(ref.play);
         }
       }
       const endDay = Math.min(Math.round(venusState.day), TOTAL_DAYS);
@@ -1009,33 +1080,95 @@
       ctx.beginPath(); ctx.arc(cx, cy, 7, 0, TAU); ctx.fillStyle = 'rgba(240,192,64,0.15)'; ctx.fill();
       ctx.beginPath(); ctx.arc(cx, cy, 4, 0, TAU); ctx.fillStyle = '#f0c040'; ctx.fill();
 
-      // Estela diaria (paso adaptativo según dispositivo)
-      const step = isMobile || hasLowMemory ? 3 : 1;
+      // Anillo zodiacal (esquema): círculo exterior donde se proyecta la
+      // longitud eclíptica geocéntrica de cada conjunción inferior. Separa
+      // visualmente el pentagrama (esquemático) del gráfico polar de
+      // elongación (físico).
+      const RZ = R * 1.06;
+      ctx.beginPath(); ctx.arc(cx, cy, RZ, 0, TAU);
+      ctx.strokeStyle = CAXIS(); ctx.lineWidth = 0.6; ctx.stroke();
+      // Marca del punto Aries (λ = 0°) para orientar el anillo
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - RZ + 4); ctx.lineTo(cx, cy - RZ - 4);
+      ctx.strokeStyle = CAXIS(); ctx.lineWidth = 1; ctx.stroke();
+      ctx.fillStyle = CLBL();
+      ctx.font = `${isMobile ? '6px' : '7px'} JetBrains Mono,monospace`;
+      ctx.textAlign = 'center';
+      ctx.fillText('λ = 0°', cx + 22, cy - RZ + 13);
+
+      const zx = q => cx + RZ * Math.cos(q.lon - Math.PI / 2);
+      const zy = q => cy + RZ * Math.sin(q.lon - Math.PI / 2);
+
+      // Estela diaria continua: radio = elongación, ángulo = λ geocéntrica
+      const step = isMobile || hasLowMemory ? 2 : 1;
+      let prevPt = null;
       for (let i = 0; i <= endDay; i += step) {
         const q = vPts[i];
-        const { px, py } = toCanvas(q.lon, q.elong, cx, cy, R, MAX_ELONG);
-        ctx.beginPath(); ctx.arc(px, py, 0.9, 0, TAU);
-        ctx.fillStyle = q.isEast ? CWARM(0.35) : CBLUE(0.28); ctx.fill();
+        const p = toCanvas(q.lon, q.elong, cx, cy, R, MAX_ELONG);
+        if (prevPt) {
+          ctx.beginPath();
+          ctx.moveTo(prevPt.px, prevPt.py);
+          ctx.lineTo(p.px, p.py);
+          ctx.strokeStyle = q.isEast ? CWARM(0.32) : CBLUE(0.26);
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        }
+        prevPt = p;
       }
 
-      // Pentagram: líneas entre máximas elongaciones visibles
-      const visMaxElongs = maxElongs.filter(q => q.day <= endDay);
-      if (visMaxElongs.length >= 2) {
+      // Pentagrama: cuerdas entre conjunciones inferiores CONSECUTIVAS en el
+      // tiempo. Cada conjunción ocurre ~215.5° más adelante en longitud
+      // (≡ 144.5° hacia atrás), de modo que el orden cronológico genera por sí
+      // solo la estrella {5/2}. La figura emerge durante la animación.
+      const visConjs = infConjs.filter(q => q.day <= endDay);
+      const starConjs = visConjs.slice(0, 5);
+      for (let i = 1; i < starConjs.length; i++) {
         ctx.beginPath();
-        visMaxElongs.forEach((q, i) => {
-          const { px, py } = toCanvas(q.lon, q.elong, cx, cy, R, MAX_ELONG);
-          if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
-        });
-        if (visMaxElongs.length === maxElongs.length) ctx.closePath();
-        ctx.strokeStyle = CWARM(0.55); ctx.lineWidth = 1.5; ctx.stroke();
+        ctx.moveTo(zx(starConjs[i - 1]), zy(starConjs[i - 1]));
+        ctx.lineTo(zx(starConjs[i]), zy(starConjs[i]));
+        ctx.strokeStyle = CWARM(0.6); ctx.lineWidth = 1.5; ctx.stroke();
       }
 
-      // Puntos de máxima elongación (vértices del pentagrama)
+      // Cierre imperfecto: al completar el ciclo se traza la cuerda real
+      // 5.ª → 6.ª conjunción. La 6.ª NO coincide con la 1.ª: queda ~2.25°
+      // por detrás (la resonancia 8:13:5 no es exacta).
+      if (endDay >= TOTAL_DAYS && infConjs.length >= 6 && starConjs.length === 5) {
+        const c6 = infConjs[5], c1 = infConjs[0];
+        ctx.beginPath();
+        ctx.moveTo(zx(starConjs[4]), zy(starConjs[4]));
+        ctx.lineTo(zx(c6), zy(c6));
+        ctx.strokeStyle = CWARM(0.6); ctx.lineWidth = 1.5; ctx.stroke();
+        ctx.beginPath(); ctx.arc(zx(c6), zy(c6), 4.5, 0, TAU);
+        ctx.strokeStyle = CRETRO(0.9); ctx.lineWidth = 1.4; ctx.stroke();
+        let drift = (c6.lon - c1.lon) * 180 / Math.PI;
+        while (drift > 180) drift -= 360;
+        while (drift < -180) drift += 360;
+        ctx.fillStyle = CRETRO(0.9);
+        ctx.font = `${isMobile ? '6px' : '8px'} JetBrains Mono,monospace`;
+        ctx.textAlign = zx(c6) > cx ? 'right' : 'left';
+        ctx.fillText(`6.ª conj.: Δλ ≈ ${drift.toFixed(1)}° — no cierra`,
+          zx(c6) + (zx(c6) > cx ? -9 : 9), zy(c6) + 14);
+      }
+
+      // Vértices del pentagrama (las 5 conjunciones inferiores del ciclo)
+      starConjs.forEach(q => {
+        ctx.beginPath(); ctx.arc(zx(q), zy(q), 5, 0, TAU);
+        ctx.fillStyle = '#e8a030'; ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.35)'; ctx.lineWidth = 1; ctx.stroke();
+        // Conector sutil con la posición física real (elongación mínima)
+        const p = toCanvas(q.lon, q.elong, cx, cy, R, MAX_ELONG);
+        ctx.setLineDash([2, 4]);
+        ctx.beginPath(); ctx.moveTo(zx(q), zy(q)); ctx.lineTo(p.px, p.py);
+        ctx.strokeStyle = CWARM(0.18); ctx.lineWidth = 0.7; ctx.stroke();
+        ctx.setLineDash([]);
+      });
+
+      // Máximas elongaciones (puntos decorativos: este vespertino / oeste matutino)
+      const visMaxElongs = maxElongs.filter(q => q.day <= endDay);
       visMaxElongs.forEach(q => {
         const { px, py } = toCanvas(q.lon, q.elong, cx, cy, R, MAX_ELONG);
-        ctx.beginPath(); ctx.arc(px, py, 5.5, 0, TAU);
-        ctx.fillStyle = q.isEast ? CWARM(1) : CBLUE(1); ctx.fill();
-        ctx.strokeStyle = 'rgba(255,255,255,0.3)'; ctx.lineWidth = 1; ctx.stroke();
+        ctx.beginPath(); ctx.arc(px, py, 3.5, 0, TAU);
+        ctx.fillStyle = q.isEast ? CWARM(0.85) : CBLUE(0.7); ctx.fill();
       });
 
       // Punto actual de Venus
@@ -1046,64 +1179,59 @@
         ctx.beginPath(); ctx.arc(px, py, 5, 0, TAU); ctx.fillStyle = CDOT(); ctx.fill();
         ctx.strokeStyle = 'rgba(255,255,255,0.4)'; ctx.lineWidth = 1.2; ctx.stroke();
 
-        // Actualiza estadísticas
-        const dayEl = document.getElementById('ven-day');
-        const yrEl = document.getElementById('ven-yr');
-        const elongEl = document.getElementById('ven-elong');
-        const cycEl = document.getElementById('ven-cyc');
-        if (dayEl) dayEl.textContent = endDay;
-        if (yrEl) yrEl.textContent = (endDay / 365.25).toFixed(2);
-        if (elongEl) elongEl.textContent = cp.elong.toFixed(1) + '°';
-        if (cycEl) cycEl.textContent = Math.round(100 * endDay / TOTAL_DAYS) + '%';
+        if (ref.day)   ref.day.textContent   = endDay;
+        if (ref.yr)    ref.yr.textContent    = (endDay / 365.25).toFixed(2);
+        if (ref.elong) ref.elong.textContent = cp.elong.toFixed(1) + '°';
+        if (ref.cyc)   ref.cyc.textContent   = Math.round(100 * endDay / TOTAL_DAYS) + '%';
       }
 
       // Título
       ctx.fillStyle = CTTL();
       ctx.font = `500 ${isMobile ? '7px' : '10px'} JetBrains Mono,monospace`;
       ctx.textAlign = 'left';
-      ctx.fillText('PENTAGRAMA DE VENUS · 8 AÑOS', isMobile ? 8 : 14, isMobile ? 14 : 19);
-
-      animationId = requestAnimationFrame(draw);
+      ctx.fillText(isMobile ? 'PENTAGRAMA DE VENUS · 8 AÑOS'
+        : 'PENTAGRAMA DE VENUS · 8 AÑOS · MODELO 3D (i = 3.39°)', isMobile ? 8 : 14, isMobile ? 14 : 19);
     }
 
     // Controles
-    const spdSlider = document.getElementById('ven-spd');
-    if (spdSlider) spdSlider.addEventListener('input', function () {
-      const lbl = document.getElementById('ven-spd-lbl');
-      if (lbl) lbl.textContent = this.value + '×';
+    if (ref.spd) ref.spd.addEventListener('input', function () {
+      if (ref.spdLbl) ref.spdLbl.textContent = this.value + '×';
     });
 
-    const playBtn = document.getElementById('ven-play');
-    if (playBtn) playBtn.addEventListener('click', () => {
+    if (ref.play) ref.play.addEventListener('click', () => {
       if (!venusState.started) { venusState.started = true; animationId = requestAnimationFrame(draw); }
       venusState.playing = !venusState.playing;
-      updatePlayBtn(playBtn);
+      updatePlayBtn(ref.play);
     });
 
-    const resetBtn = document.getElementById('ven-reset');
-    if (resetBtn) resetBtn.addEventListener('click', () => {
+    if (ref.reset) ref.reset.addEventListener('click', () => {
       venusState.day = 0; venusState.playing = true;
       if (!venusState.started) { venusState.started = true; animationId = requestAnimationFrame(draw); }
-      updatePlayBtn(playBtn);
+      updatePlayBtn(ref.play);
     });
 
-    const completeBtn = document.getElementById('ven-complete');
-    if (completeBtn) completeBtn.addEventListener('click', () => {
+    if (ref.complete) ref.complete.addEventListener('click', () => {
       venusState.day = TOTAL_DAYS; venusState.playing = false;
       if (!venusState.started) { venusState.started = true; animationId = requestAnimationFrame(draw); }
-      updatePlayBtn(playBtn);
+      updatePlayBtn(ref.play);
     });
 
-    // Lazy start
+    // Lazy start + pausa fuera del viewport + reduced motion
     const venusSection = document.getElementById('venus');
     const venusObs = new IntersectionObserver(entries => {
       entries.forEach(entry => {
-        if (entry.isIntersecting && !venusState.started) {
-          venusState.started = true; venusState.playing = true;
-          const btn = document.getElementById('ven-play');
-          if (btn) { btn.textContent = 'Pausar'; btn.className = 'on'; }
+        inView = entry.isIntersecting;
+        if (inView && !venusState.started) {
+          venusState.started = true;
+          if (prefersReducedMotion) {
+            venusState.day = TOTAL_DAYS;
+            venusState.playing = false;
+            updatePlayBtn(ref.play);
+          } else {
+            venusState.playing = true;
+            if (ref.play) { ref.play.textContent = 'Pausar'; ref.play.className = 'on'; }
+          }
           animationId = requestAnimationFrame(draw);
-          venusObs.disconnect();
         }
       });
     }, { threshold: 0.25 });
@@ -1111,11 +1239,13 @@
   })();
 
   // =========================================================================
-  // 7. Visibility API — pausa todos los canvas cuando la pestaña está oculta
+  // 7. Visibility API — pausa explícita cuando la pestaña está oculta
+  //    (rAF ya pausa solo, pero apagamos el state para que al volver no
+  //     dé un salto temporal grande al usuario).
   // =========================================================================
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
-      if (solarState.started) solarState.playing = false;
+      if (solarState.started)  solarState.playing  = false;
       if (planetState.started) planetState.playing = false;
     }
   });

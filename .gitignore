@@ -3,8 +3,9 @@
 Thumbs.db
 desktop.ini
 
-# Editor
+# Editor / herramientas locales
 .vscode/
+.claude/
 *.suo
 *.user
 
