@@ -15,7 +15,9 @@
   --hi:      #8a98b0;
   --hi2:     #a2b2cc;
   --warm:    #c49b72;
+  --warm-rgb: 196,155,114;
   --warm2:   #dbb48a;
+  --ink-rgb: 234,238,245;
 
   /* ═══ Colores planetarios ═══ */
   --planet-mercury:  #909098;
@@ -406,6 +408,7 @@ section {
 .prose a {
   color: var(--warm);
   text-decoration: none;
+  border-bottom: 1px solid rgba(var(--warm-rgb), 0.35);
   border-bottom: 1px solid color-mix(in srgb, var(--warm) 35%, transparent);
 }
 
@@ -417,6 +420,7 @@ section {
   border-left: 2px solid var(--warm);
   padding: 1rem 1.6rem;
   margin: 2.2rem 0;
+  background: rgba(var(--warm-rgb), 0.03);
   background: color-mix(in srgb, var(--warm) 3%, transparent);
 }
 
@@ -468,6 +472,7 @@ section {
   content: '';
   flex: 1;
   height: 1px;
+  background: rgba(var(--warm-rgb), 0.20);
   background: color-mix(in srgb, var(--warm) 20%, transparent);
 }
 
@@ -541,7 +546,9 @@ section {
 }
 
 .hbox {
+  background: rgba(var(--warm-rgb), 0.04);
   background: color-mix(in srgb, var(--warm) 4%, transparent);
+  border: 1px solid rgba(var(--warm-rgb), 0.18);
   border: 1px solid color-mix(in srgb, var(--warm) 18%, transparent);
   border-radius: var(--r);
   padding: 1.2rem 1.5rem;
@@ -632,6 +639,7 @@ section {
 .ctoolbar button:hover {
   border-color: var(--warm);
   color: var(--warm);
+  background: rgba(var(--warm-rgb), 0.05);
   background: color-mix(in srgb, var(--warm) 5%, transparent);
 }
 
@@ -792,6 +800,7 @@ section {
 }
 
 .shapec {
+  background: var(--bg1);
   background: color-mix(in srgb, var(--warm) 4%, var(--bg1));
   border: 1px solid var(--line2);
   border-radius: var(--r);
@@ -860,7 +869,9 @@ section {
   border-radius: 2px;
   font-family: var(--mono);
   font-size: 0.62rem;
+  background: rgba(var(--warm-rgb), 0.08);
   background: color-mix(in srgb, var(--warm) 8%, transparent);
+  border: 1px solid rgba(var(--warm-rgb), 0.25);
   border: 1px solid color-mix(in srgb, var(--warm) 25%, transparent);
   color: var(--warm);
   white-space: nowrap;
@@ -901,6 +912,7 @@ section {
 .ref-list li a {
   color: var(--warm);
   text-decoration: none;
+  border-bottom: 1px solid rgba(var(--warm-rgb), 0.35);
   border-bottom: 1px solid color-mix(in srgb, var(--warm) 35%, transparent);
 }
 
@@ -942,6 +954,7 @@ footer {
 .footer-r a {
   color: inherit;
   text-decoration: none;
+  border-bottom: 1px solid rgba(var(--ink-rgb), 0.30);
   border-bottom: 1px solid color-mix(in srgb, var(--ink) 30%, transparent);
   transition: border-color var(--transition-fast);
 }
