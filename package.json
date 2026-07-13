@@ -6,11 +6,12 @@
   "description": "Analema solar — página educativa estática sin dependencias runtime",
   "scripts": {
     "validate": "node validacion.mjs",
+    "smoke": "node smoke-test.cjs",
     "lint:js": "eslint scripts.js",
     "lint:html": "html-validate index.html",
     "lint:css": "stylelint styles.css",
     "lint": "npm run lint:js && npm run lint:html && npm run lint:css",
-    "test": "npm run validate && npm run lint"
+    "test": "npm run validate && npm run smoke && npm run lint"
   },
   "devDependencies": {
     "eslint": "^9.0.0",

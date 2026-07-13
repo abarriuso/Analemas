@@ -32,6 +32,10 @@ jobs:
       - name: Validación astronómica
         run: node validacion.mjs
 
+      # ── Smoke test (load-time runtime errors) ──
+      - name: Smoke test
+        run: node smoke-test.cjs
+
       # ── ESLint ──
       - name: Lint JavaScript
         run: npm run lint:js
