@@ -241,7 +241,7 @@ nav {
 .hero-title {
   font-family: var(--serif);
   font-size: clamp(2.8rem, 5vw, 4.5rem);
-  font-weight: 420;
+  font-weight: 500;
   font-style: italic;
   line-height: 1.08;
   color: var(--ink);
@@ -297,7 +297,7 @@ nav {
   font-family: var(--mono);
   font-size: 0.95rem;
   color: var(--ink);
-  font-weight: 420;
+  font-weight: 400;
 }
 
 .hero-scroll {
@@ -360,7 +360,7 @@ section {
 .sec-t {
   font-family: var(--serif);
   font-size: clamp(1.8rem, 3.5vw, 2.6rem);
-  font-weight: 420;
+  font-weight: 500;
   color: var(--ink);
   line-height: 1.15;
 }
@@ -626,7 +626,7 @@ section {
   transition: all var(--transition-fast);
   white-space: nowrap;
   min-height: 36px;
-  font-weight: 420;
+  font-weight: 400;
 }
 
 .ctoolbar button:hover {
@@ -749,7 +749,7 @@ section {
   transition: all var(--transition-fast);
   text-transform: uppercase;
   min-height: 36px;
-  font-weight: 420;
+  font-weight: 500;
 }
 
 .pbtn:hover {
@@ -1172,7 +1172,7 @@ input[type="range"] {
   -webkit-appearance: none;
   background: transparent;
 }
-input[type="range"]:focus {
+input[type="range"]:focus:not(:focus-visible) {
   outline: none;
 }
 input[type="range"]::-webkit-slider-runnable-track {

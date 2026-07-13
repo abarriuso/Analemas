@@ -13,7 +13,6 @@
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <meta property="og:title" content="Analemas — Mecánica Orbital y Geometría Celeste">
   <meta property="og:description" content="Simulación interactiva del analema solar, analemas planetarios y el pentagrama de Venus. Basado en Meeus (1998) y datos JPL.">
-  <meta property="og:image" content="https://abarriuso.github.io/analemma/og-image.svg">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://abarriuso.github.io/analemma/">
   <meta name="twitter:card" content="summary_large_image">
@@ -26,6 +25,7 @@
 </head>
 
 <body>
+  <noscript><div style="padding:2rem;text-align:center;font-family:sans-serif;color:#fff;background:#1a1a2e;min-height:100vh;display:flex;align-items:center;justify-content:center"><p>Esta página requiere JavaScript para mostrar las simulaciones orbitales interactivas.</p></div></noscript>
   <a href="#main-content" class="skip-link">Saltar al contenido</a>
 
   <canvas id="starfield" aria-hidden="true"></canvas>
@@ -45,7 +45,7 @@
   <section id="hero">
     <div class="hero-inner">
       <div class="hero-canvas-wrap">
-        <canvas id="hero-canvas" aria-label="Analema solar terrestre. La curva en forma de 8 muestra la ecuación del tiempo y la declinación solar." role="img"></canvas>
+        <canvas id="hero-canvas" aria-label="Analema solar terrestre. La curva en forma de 8 muestra la ecuación del tiempo y la declinación solar." role="img" tabindex="0"></canvas>
       </div>
       <div class="hero-text-col">
         <p class="hero-eyebrow">Mecánica orbital &amp; geometría celeste</p>
@@ -300,7 +300,7 @@
       <div class="ly-solar fi">
         <div>
           <div class="ccard">
-            <canvas id="solar-canvas" aria-label="Animación del analema solar terrestre. Muestra la curva en forma de 8 asimétrica, con un punto que se desplaza día a día y marcas mensuales." role="img"></canvas>
+            <canvas id="solar-canvas" aria-label="Animación del analema solar terrestre. Muestra la curva en forma de 8 asimétrica, con un punto que se desplaza día a día y marcas mensuales." role="img" tabindex="0"></canvas>
             <div class="ctoolbar">
               <label for="solar-spd">Velocidad</label>
               <input type="range" id="solar-spd" min="1" max="40" value="10" step="1" aria-valuemin="1"
@@ -391,7 +391,7 @@
       <div class="ly2 fi">
         <div>
           <div class="ccard">
-            <canvas id="planet-canvas" aria-label="Simulación del analema planetario geocéntrico. Muestra el movimiento aparente del planeta seleccionado, con segmentos de color para movimiento directo (azul) y retrógrado (rojo)." role="img"></canvas>
+            <canvas id="planet-canvas" aria-label="Simulación del analema planetario geocéntrico. Muestra el movimiento aparente del planeta seleccionado, con segmentos de color para movimiento directo (azul) y retrógrado (rojo)." role="img" tabindex="0"></canvas>
             <div class="ctoolbar">
               <label for="pl-spd">Velocidad</label>
               <input type="range" id="pl-spd" min="1" max="80" value="25" step="1" aria-label="Velocidad de animación" aria-valuemin="1" aria-valuemax="80" aria-valuenow="25">
@@ -445,7 +445,7 @@
       <div class="ly-venus fi">
         <div>
           <div class="ccard">
-            <canvas id="venus-canvas" aria-label="Pentagrama de Venus: las cinco conjunciones inferiores de un ciclo de 8 años, unidas en orden cronológico sobre el anillo zodiacal, forman una estrella de cinco puntas que no llega a cerrarse (deriva de unos 2.3 grados por ciclo). La curva interior muestra la elongación diaria de Venus respecto al Sol." role="img"></canvas>
+            <canvas id="venus-canvas" aria-label="Pentagrama de Venus: las cinco conjunciones inferiores de un ciclo de 8 años, unidas en orden cronológico sobre el anillo zodiacal, forman una estrella de cinco puntas que no llega a cerrarse (deriva de unos 2.3 grados por ciclo). La curva interior muestra la elongación diaria de Venus respecto al Sol." role="img" tabindex="0"></canvas>
             <div class="ctoolbar">
               <label for="ven-spd">Velocidad</label>
               <input type="range" id="ven-spd" min="1" max="80" value="30" step="1" aria-label="Velocidad de animación" aria-valuemin="1" aria-valuemax="80" aria-valuenow="30">

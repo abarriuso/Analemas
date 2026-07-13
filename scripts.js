@@ -1,6 +1,11 @@
 (function () {
   'use strict';
 
+  if (typeof IntersectionObserver === 'undefined') {
+    document.documentElement.innerHTML = '<div style="padding:2rem;text-align:center;font-family:sans-serif;color:#fff;background:#1a1a2e;min-height:100vh;display:flex;align-items:center;justify-content:center"><p>Tu navegador no soporta IntersectionObserver. Actualiza a un navegador moderno (Chrome 51+, Firefox 55+, Safari 12.1+).</p></div>';
+    return;
+  }
+
   // =========================================================================
   // 0. Constantes globales, utilidades y detección de dispositivo
   // =========================================================================
@@ -114,7 +119,9 @@
   function getIsMobile() { return window.innerWidth < 768; }
   let isMobile = getIsMobile();
   const hasLowMemory = (navigator.hardwareConcurrency !== undefined) && (navigator.hardwareConcurrency <= 2);
-  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const reducedMotionMQ = window.matchMedia('(prefers-reduced-motion: reduce)');
+  let prefersReducedMotion = reducedMotionMQ.matches;
+  reducedMotionMQ.addEventListener('change', () => { prefersReducedMotion = reducedMotionMQ.matches; });
 
   // ── Utilidad unificada de resize para canvas ──────────────────────────────
   // Uso: setupCanvasResize(canvas, onResizeCallback, { minWidth, maxWidth, aspectRatio, useContainer })
@@ -131,13 +138,15 @@
     let resizeTimer = null;
     let lastW = 0, lastH = 0;
 
+    let resizeAttempt = 0;
     function doResize() {
       let cssW, cssH;
       if (useContainer && canvas.parentElement) {
         const rect = canvas.parentElement.getBoundingClientRect();
         cssW = rect.width;
         cssH = rect.height;
-        if (cssW === 0 || cssH === 0) {
+        if ((cssW === 0 || cssH === 0) && resizeAttempt < 20) {
+          resizeAttempt++;
           setTimeout(doResize, 50);
           return;
         }
@@ -167,6 +176,7 @@
     doResize();
     window.addEventListener('resize', () => {
       isMobile = getIsMobile();
+      if (typeof planetCache !== 'undefined') planetCache.clear();
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(doResize, debounceMs);
     });
@@ -264,7 +274,7 @@
   //   E_exc = −C (ecuación del centro, O(e³))
   //   E_obl: serie en y = tan²(ε/2): y·sin2λ − (y²/2)·sin4λ + (y³/3)·sin6λ
   // Validación reproducible frente al Astronomical Almanac: node validacion.mjs
-  function generateSolarAnalemaPoints(_epsRad = EPS0, ecc = ECC0) {
+  function generateSolarAnalemaPoints(ecc = ECC0) {
     const pts = [];
     const steps = 2000;
     const T = EARTH_T;
@@ -330,7 +340,7 @@
   // Actualiza el botón play/pausa/reanudar de cualquier sección de canvas
   function updatePlayBtn(btn, done, playing) {
     if (!btn) return;
-    if (done) { btn.textContent = 'Reanudar'; btn.className = ''; btn.classList.add('ended'); }
+    if (done) { btn.textContent = 'Completado'; btn.className = ''; btn.classList.add('ended'); }
     else if (playing) { btn.textContent = 'Pausar'; btn.className = 'on'; }
     else { btn.textContent = 'Reanudar'; btn.className = ''; }
   }
@@ -348,7 +358,11 @@
             state.started = true;
             if (onStart) onStart();
           }
+          if (animationId !== null) cancelAnimationFrame(animationId);
           animationId = requestAnimationFrame(drawFn);
+        } else if (animationId !== null) {
+          cancelAnimationFrame(animationId);
+          animationId = null;
         }
       });
     }, { threshold });
@@ -360,8 +374,8 @@
   function drawGrid(ctx, MX, MY, X0, X1, Y0, Y1, W, H, xm, ym) {
     for (let i = 0; i <= GRID_DIVISIONS; i++) {
       ctx.strokeStyle = colorGrid(); ctx.lineWidth = 0.5;
-      ctx.beginPath(); ctx.moveTo(MX(X0 + i * (X1 - X0) / 4), ym); ctx.lineTo(MX(X0 + i * (X1 - X0) / 4), H - ym); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(xm, MY(Y0 + i * (Y1 - Y0) / 4)); ctx.lineTo(W - xm, MY(Y0 + i * (Y1 - Y0) / 4)); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(MX(X0 + i * (X1 - X0) / GRID_DIVISIONS), ym); ctx.lineTo(MX(X0 + i * (X1 - X0) / GRID_DIVISIONS), H - ym); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(xm, MY(Y0 + i * (Y1 - Y0) / GRID_DIVISIONS)); ctx.lineTo(W - xm, MY(Y0 + i * (Y1 - Y0) / GRID_DIVISIONS)); ctx.stroke();
     }
     ctx.strokeStyle = colorAxis(); ctx.lineWidth = 0.5; ctx.setLineDash([3, 5]);
     ctx.beginPath(); ctx.moveTo(MX((X0 + X1) / 2), ym); ctx.lineTo(MX((X0 + X1) / 2), H - ym); ctx.stroke();
@@ -485,6 +499,8 @@
     // El loop lo arranca el IntersectionObserver (evita doble requestAnimationFrame)
   })();
 
+  const heroState = { started: true, playing: true };
+
   // =========================================================================
   // 3. Hero Canvas — analema interactivo
   // =========================================================================
@@ -504,7 +520,7 @@
     let cachedScaleX = 1, cachedScaleY = 1;
 
     function updateAnalema() {
-      currentPoints = generateSolarAnalemaPoints(currentEps, currentEcc);
+      currentPoints = generateSolarAnalemaPoints(currentEcc);
       const xs = currentPoints.map(p => p.x);
       const ys = currentPoints.map(p => p.y);
       xc = (arrayMin(xs) + arrayMax(xs)) / 2;
@@ -549,18 +565,22 @@
     let heroInView = true;
     const heroObs = new IntersectionObserver(es => {
       heroInView = es[0].isIntersecting;
-      if (heroInView) requestAnimationFrame(draw);
+      if (heroInView) {
+        heroState.playing = true;
+        requestAnimationFrame(draw);
+      }
     }, { threshold: 0 });
     heroObs.observe(cv);
 
     function draw(ts) {
-      if (!heroInView) return;
+      if (!heroInView || !heroState.playing) return;
       requestAnimationFrame(draw);
       if (baseWidth === 0 || baseHeight === 0) return;
       if (ts - lastTimestamp < FRAME_TIME) return;
       lastTimestamp = ts;
       if (currentPoints.length === 0) return;
       try {
+        if (document.hidden) { heroState.playing = false; return; }
         if (!prefersReducedMotion) {
           animProgress += HERO_ANIM_SPEED;
           if (animProgress > 1) animProgress = 0;
@@ -1081,10 +1101,7 @@
 
     function precompute() {
       vPts = [];
-      const V = {
-        a: 0.72333, e: 0.00677, T: 224.701, M0: 50.4161 * DEG,
-        lonPeri: 131.5637 * DEG, i: 3.39471 * DEG, O: 76.68069 * DEG
-      };
+      const V = planetsData[1]; // Venus desde planetsData (J2000.0)
       const earthEl = { a: 1, e: ECC0, T: EARTH_T, M0: M0_EARTH, lonPeri: OMEGA_EARTH, i: 0, O: 0 };
       for (let d = 0; d <= TOTAL_DAYS + EXTRA_DAYS; d += 0.5) {
         const pe = orbPosInc(earthEl, d);
@@ -1322,6 +1339,7 @@
   // =========================================================================
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
+      if (heroState.started)   heroState.playing   = false;
       if (solarState.started)  solarState.playing  = false;
       if (planetState.started) planetState.playing = false;
       if (venusState.started)  venusState.playing  = false;

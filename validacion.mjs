@@ -239,7 +239,7 @@ const maxE = [];
 for (let i = 1; i < pts.length - 1; i++) {
   if (pts[i].elong > pts[i - 1].elong && pts[i].elong >= pts[i + 1].elong && pts[i].elong > 40) maxE.push(pts[i].elong);
 }
-console.log(`\n   Elongaciones máximas del modelo: ${Math.min(...maxE).toFixed(1)}° – ${Math.max(...maxE).toFixed(1)}° (referencia: 45°–47°)`);
+if (maxE.length > 0) console.log(`\n   Elongaciones máximas del modelo: ${Math.min(...maxE).toFixed(1)}° – ${Math.max(...maxE).toFixed(1)}° (referencia: 45°–47°)`);
 
 // ── 3. Verificación de regresión (exit code) ─────────────────────────────────
 let pass = true;
