@@ -1,0 +1,9 @@
+{
+  "extends": ["html-validate:recommended"],
+  "rules": {
+    "no-implicit-button-type": "error",
+    "no-redundant-role": "error",
+    "aria-label-misuse": "error",
+    "wcag/h63": "error"
+  }
+}

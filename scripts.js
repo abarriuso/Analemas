@@ -110,7 +110,7 @@
   const GRID_DIVISIONS = 4;        // número de divisiones de la cuadrícula
 
   // Año tropico para mapeo día→índice (365.25 ≈ año tropico, no anomalístico)
-  const TROPICAL_YEAR = 365.25
+  const TROPICAL_YEAR = 365.25;
   function getIsMobile() { return window.innerWidth < 768; }
   let isMobile = getIsMobile();
   const hasLowMemory = (navigator.hardwareConcurrency !== undefined) && (navigator.hardwareConcurrency <= 2);
@@ -264,7 +264,7 @@
   //   E_exc = −C (ecuación del centro, O(e³))
   //   E_obl: serie en y = tan²(ε/2): y·sin2λ − (y²/2)·sin4λ + (y³/3)·sin6λ
   // Validación reproducible frente al Astronomical Almanac: node validacion.mjs
-  function generateSolarAnalemaPoints(epsRad = EPS0, ecc = ECC0) {
+  function generateSolarAnalemaPoints(_epsRad = EPS0, ecc = ECC0) {
     const pts = [];
     const steps = 2000;
     const T = EARTH_T;
@@ -337,7 +337,7 @@
 
   // Crea un IntersectionObserver que gestiona lazy-start, pausa y prefersReducedMotion
   function createSectionObserver(sectionEl, state, opts) {
-    const { threshold = 0.25, onStart, onRestart, drawFn } = opts;
+    const { threshold = 0.25, onStart, drawFn } = opts;
     let inView = false;
     let animationId = null;
     const obs = new IntersectionObserver(entries => {
@@ -371,7 +371,7 @@
 
   // Vincula controles play/reset/complete/velocity a un estado y draw function
   function bindControlEvents(refs, state, drawFn, opts) {
-    const { totalDays, updateBtn } = opts;
+    const { getTotalDays, updateBtn } = opts;
     if (refs.spd) refs.spd.addEventListener('input', function () {
       if (refs.spdLbl) refs.spdLbl.textContent = this.value + '×';
     });
@@ -386,7 +386,7 @@
       if (updateBtn) updateBtn();
     });
     if (refs.complete) refs.complete.addEventListener('click', () => {
-      state.day = totalDays; state.playing = false;
+      state.day = getTotalDays(); state.playing = false;
       if (!state.started) { state.started = true; drawFn(); }
       if (updateBtn) updateBtn();
     });
@@ -429,7 +429,7 @@
     }
 
     function updateStars() {
-      for (let s of stars) {
+      for (const s of stars) {
         s.x += s.speedX; s.y += s.speedY;
         if (s.x < -20) s.x = W + 20;
         if (s.x > W + 20) s.x = -20;
@@ -440,7 +440,7 @@
 
     function drawStars(now) {
       const baseColor = [170, 185, 210];
-      for (let s of stars) {
+      for (const s of stars) {
         const twinkle = prefersReducedMotion ? 1 : (0.7 + 0.3 * Math.sin(now * s.twinkleSpeed + s.twinklePhase));
         let brightness = s.baseBrightness * twinkle * (1 - s.z * 0.3);
         if (isMobile || hasLowMemory) brightness *= 0.6;
@@ -491,8 +491,8 @@
     if (!cv) return;
     const ctx = cv.getContext('2d');
     if (!ctx) return;
-    let currentEpsDeg = 23.44, currentEps = currentEpsDeg * DEG;
-    let currentEcc = ECC0;
+    const currentEpsDeg = 23.44, currentEps = currentEpsDeg * DEG;
+    const currentEcc = ECC0;
     let currentPoints = [];
     let xc = 0, yc = 0, xRange = 1, yRange = 1;
     let animProgress = 0;
@@ -513,6 +513,8 @@
       if (oblSpan) oblSpan.textContent = currentEpsDeg.toFixed(2) + '°';
       const eccSpan = document.getElementById('hero-ecc-val');
       if (eccSpan) eccSpan.textContent = currentEcc.toFixed(5);
+      const periodSpan = document.getElementById('hero-period');
+      if (periodSpan) periodSpan.textContent = EARTH_T.toFixed(2) + ' d';
       if (baseWidth > 0 && baseHeight > 0) {
         const ref = Math.min(baseWidth, baseHeight);
         cachedScaleX = ref * HERO_X_RATIO / xRange;
@@ -684,7 +686,7 @@
         ctx.closePath(); ctx.strokeStyle = colorBlue(0.07); ctx.lineWidth = 1; ctx.stroke();
 
       if (solarState.playing && solarState.day < SOLAR_PTS.length - 1) {
-        const s = safeSpeed(refs.spd.value, 10);
+        const s = safeSpeed(refs.spd?.value, 10);
         solarState.day += s * SOLAR_DAY_FACTOR;
           if (solarState.day >= SOLAR_PTS.length - 1) {
             solarState.day = SOLAR_PTS.length - 1;
@@ -755,7 +757,7 @@
     });
 
     bindControlEvents(refs, solarState, () => requestAnimationFrame(draw), {
-      totalDays: SOLAR_PTS.length - 1,
+      getTotalDays: () => SOLAR_PTS.length - 1,
       updateBtn: () => updatePlayBtn(refs.play, solarState.day >= SOLAR_PTS.length - 1, solarState.playing)
     });
   })();
@@ -970,7 +972,7 @@
         ctx.strokeStyle = p.color + '18'; ctx.lineWidth = 1; ctx.stroke();
 
       if (planetState.playing && planetState.day < pts.length - 1) {
-        const s = safeSpeed(refs.spd.value, 25);
+        const s = safeSpeed(refs.spd?.value, 25);
         planetState.day += s * PLANET_DAY_FACTOR;
           if (planetState.day >= pts.length - 1) {
             planetState.day = pts.length - 1;
@@ -1031,7 +1033,7 @@
     });
 
     bindControlEvents(refs, planetState, () => requestAnimationFrame(draw), {
-      totalDays: getPlanetPoints(selectedPlanet).pts.length - 1,
+      getTotalDays: () => getPlanetPoints(selectedPlanet).pts.length - 1,
       updateBtn: () => {
         const { pts } = getPlanetPoints(selectedPlanet);
         updatePlayBtn(refs.play, planetState.day >= pts.length - 1, planetState.playing);
@@ -1302,7 +1304,7 @@
     });
 
     bindControlEvents(refs, venusState, () => requestAnimationFrame(draw), {
-      totalDays: TOTAL_DAYS,
+      getTotalDays: () => TOTAL_DAYS,
       updateBtn: () => updatePlayBtn(refs.play, venusState.day >= TOTAL_DAYS, venusState.playing)
     });
   })();

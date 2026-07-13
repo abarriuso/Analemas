@@ -1,0 +1,23 @@
+{
+  "name": "analemma",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Analema solar — página educativa estática sin dependencias runtime",
+  "scripts": {
+    "validate": "node validacion.mjs",
+    "smoke": "node smoke-test.mjs.cjs",
+    "lint:js": "eslint scripts.js",
+    "lint:html": "html-validate index.html",
+    "lint:css": "stylelint styles.css",
+    "lint": "npm run lint:js && npm run lint:html && npm run lint:css",
+    "test": "npm run validate && npm run smoke && npm run lint"
+  },
+  "devDependencies": {
+    "eslint": "^9.0.0",
+    "html-validate": "^8.0.0",
+    "stylelint": "^16.0.0",
+    "stylelint-config-standard": "^36.0.0",
+    "@lhci/cli": "^0.14.0"
+  }
+}

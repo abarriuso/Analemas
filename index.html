@@ -32,10 +32,10 @@
 
   <nav aria-label="Navegación principal">
     <div class="nav-brand"><span class="nav-dot" aria-hidden="true"></span>Analemas</div>
-    <button id="nav-toggle" aria-label="Menú" aria-expanded="false" aria-controls="nav-links-list">☰</button>
-    <ul class="nav-links" id="nav-links-list" role="list">
-      <li role="listitem"><a href="#que-es">01</a></li><li role="listitem"><a href="#matematica">02</a></li><li role="listitem"><a href="#solar">03</a></li>
-      <li role="listitem"><a href="#planetas">04</a></li><li role="listitem"><a href="#venus">05</a></li><li role="listitem"><a href="#tabla">06</a></li><li role="listitem"><a href="#referencias">07</a></li>
+    <button id="nav-toggle" type="button" aria-label="Menú" aria-expanded="false" aria-controls="nav-links-list">☰</button>
+    <ul class="nav-links" id="nav-links-list">
+      <li><a href="#que-es">01</a></li><li><a href="#matematica">02</a></li><li><a href="#solar">03</a></li>
+      <li><a href="#planetas">04</a></li><li><a href="#venus">05</a></li><li><a href="#tabla">06</a></li><li><a href="#referencias">07</a></li>
     </ul>
   </nav>
 
@@ -168,7 +168,7 @@
             class="v">ε</span> · sin<span class="v">λ</span>)<span class="c">← declinación geocéntrica</span></div>
       </div>
       <div class="fbox fi" style="padding:0;overflow:hidden">
-        <svg viewBox="0 0 720 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagrama: los dos efectos físicos que forman el analema — excentricidad orbital y oblicuidad axial" style="width:100%;height:auto;display:block">
+        <svg viewBox="0 0 720 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagrama: los dos efectos físicos que forman el analema — excentricidad orbital y oblicuidad axial" style="width:100%;height:auto;display:block">
           <defs>
             <style>
               .di-svg text { font-family: 'JetBrains Mono', monospace; fill: #b6bec9; }
@@ -189,56 +189,79 @@
               <polygon points="0 0, 6 2, 0 4" fill="#c49b72"/>
             </marker>
           </defs>
+
           <!-- Panel 1: Excentricidad orbital -->
           <g transform="translate(10,10)">
-            <text x="100" y="12" text-anchor="middle" class="title">Excentricidad orbital</text>
-            <ellipse cx="100" cy="100" rx="80" ry="60" class="orbit"/>
-            <circle cx="125" cy="100" r="6" class="sun"/>
-            <text x="125" y="118" text-anchor="middle" class="param">Sol</text>
-            <circle cx="180" cy="100" r="4" class="earth"/>
-            <text x="180" y="90" text-anchor="middle" class="label">Perihelio</text>
-            <text x="180" y="130" text-anchor="middle" class="param">v ↗ rápido</text>
-            <circle cx="20" cy="100" r="4" class="earth"/>
-            <text x="20" y="90" text-anchor="middle" class="label">Afelio</text>
-            <text x="20" y="130" text-anchor="middle" class="param">v ↙ lento</text>
-            <line x1="160" y1="100" x2="172" y2="100" class="arrow"/>
-            <line x1="40" y1="100" x2="28" y2="100" class="arrow"/>
-            <text x="100" y="175" text-anchor="middle" class="label">e = 0.0167 → Δt ≈ ±7.7 min</text>
+            <text x="100" y="14" text-anchor="middle" class="title">Excentricidad orbital</text>
+            <!-- Órbita elíptica (solo trazo, sin relleno) -->
+            <ellipse cx="100" cy="105" rx="70" ry="50" class="orbit"/>
+            <!-- Sol en foco derecho -->
+            <circle cx="120" cy="105" r="6" class="sun"/>
+            <text x="120" y="125" text-anchor="middle" class="param">Sol</text>
+            <!-- Perihelio (derecha) -->
+            <circle cx="170" cy="105" r="3.5" class="earth"/>
+            <text x="170" y="95" text-anchor="middle" class="label">Perihelio</text>
+            <text x="170" y="140" text-anchor="middle" class="param">v ↗ rápido</text>
+            <!-- Afelio (izquierda) -->
+            <circle cx="30" cy="105" r="3.5" class="earth"/>
+            <text x="30" y="95" text-anchor="middle" class="label">Afelio</text>
+            <text x="30" y="140" text-anchor="middle" class="param">v ↙ lento</text>
+            <!-- Flechas de velocidad -->
+            <line x1="155" y1="105" x2="165" y2="105" class="arrow"/>
+            <line x1="45" y1="105" x2="35" y2="105" class="arrow"/>
+            <!-- Parámetro -->
+            <text x="100" y="180" text-anchor="middle" class="label">e = 0.0167 → Δt ≈ ±7.7 min</text>
           </g>
+
           <!-- Panel 2: Oblicuidad axial -->
           <g transform="translate(250,10)">
-            <text x="100" y="12" text-anchor="middle" class="title">Oblicuidad axial</text>
-            <line x1="10" y1="100" x2="190" y2="100" class="ecliptic"/>
-            <text x="195" y="103" class="label" text-anchor="start">eclíptica</text>
-            <line x1="20" y1="130" x2="180" y2="70" class="equator"/>
-            <text x="185" y="68" class="label" text-anchor="start">ecuador</text>
-            <path d="M 60,100 A 20,20 0 0,1 55,88" fill="none" stroke="#c49b72" stroke-width="0.8"/>
-            <text x="52" y="82" class="param" text-anchor="middle">ε</text>
-            <circle cx="100" cy="100" r="5" class="sun"/>
-            <path d="M 20,100 Q 55,75 100,70 Q 145,75 180,100" class="ecliptic" stroke="#6b9a95" stroke-width="0.6"/>
-            <text x="100" y="60" text-anchor="middle" class="label">proyección sobre ecuador</text>
-            <text x="100" y="175" text-anchor="middle" class="label">ε = 23.44° → Δδ ≈ ±23.4°</text>
+            <text x="100" y="14" text-anchor="middle" class="title">Oblicuidad axial</text>
+            <!-- Línea de eclíptica (horizontal) -->
+            <line x1="15" y1="110" x2="185" y2="110" class="ecliptic"/>
+            <text x="188" y="113" class="label" text-anchor="start">eclíptica</text>
+            <!-- Línea de ecuador (inclinada) -->
+            <line x1="25" y1="140" x2="175" y2="80" class="equator"/>
+            <text x="178" y="78" class="label" text-anchor="start">ecuador</text>
+            <!-- Arco del ángulo ε -->
+            <path d="M 60,110 A 18,18 0 0,1 55,97" fill="none" stroke="#c49b72" stroke-width="0.8"/>
+            <text x="52" y="90" class="param" text-anchor="middle">ε</text>
+            <!-- Sol central -->
+            <circle cx="100" cy="110" r="5" class="sun"/>
+            <!-- Proyección del plano orbital sobre ecuador -->
+            <path d="M 25,110 Q 60,85 100,82 Q 140,85 175,110" class="ecliptic" stroke="#6b9a95" stroke-width="0.6"/>
+            <text x="100" y="72" text-anchor="middle" class="label">proyección sobre ecuador</text>
+            <!-- Parámetro -->
+            <text x="100" y="180" text-anchor="middle" class="label">ε = 23.44° → Δδ ≈ ±23.4°</text>
           </g>
+
           <!-- Panel 3: Resultado — Analema -->
           <g transform="translate(490,10)">
-            <text x="110" y="12" text-anchor="middle" class="title">Resultado: analema</text>
-            <line x1="110" y1="30" x2="110" y2="170" class="axis"/>
-            <line x1="30" y1="100" x2="190" y2="100" class="axis"/>
-            <text x="195" y="103" class="label" text-anchor="start">E(t) →</text>
-            <text x="115" y="35" class="label" text-anchor="start">δ ↗</text>
-            <ellipse cx="110" cy="100" rx="60" ry="18" class="component" stroke="#6b9a95" stroke-dasharray="2 2"/>
-            <text x="175" y="85" class="label" fill="#6b9a95" font-size="7.5">E_exc</text>
-            <ellipse cx="110" cy="100" rx="12" ry="55" class="component" stroke="#c49b72" stroke-dasharray="2 2"/>
-            <text x="128" y="55" class="label" fill="#c49b72" font-size="7.5">E_obl</text>
-            <path d="M 110,45 C 80,60 80,85 110,100 C 140,115 140,140 110,155 C 80,140 80,115 110,100 C 140,85 140,60 110,45" class="analemma"/>
-            <circle cx="110" cy="45" r="3" fill="#dbb48a"/>
-            <text x="118" y="44" class="param" font-size="7">~3 nov</text>
-            <circle cx="110" cy="155" r="3" fill="#dbb48a"/>
-            <text x="118" y="158" class="param" font-size="7">~12 feb</text>
-            <text x="110" y="185" text-anchor="middle" class="label">E(t) = E_exc + E_obl</text>
+            <text x="110" y="14" text-anchor="middle" class="title">Resultado: analema</text>
+            <!-- Ejes -->
+            <line x1="110" y1="30" x2="110" y2="185" class="axis"/>
+            <line x1="30" y1="110" x2="190" y2="110" class="axis"/>
+            <text x="195" y="113" class="label" text-anchor="start">E(t) →</text>
+            <text x="115" y="37" class="label" text-anchor="start">δ ↗</text>
+            <!-- Componente E_exc (elipse horizontal) -->
+            <ellipse cx="110" cy="110" rx="55" ry="16" class="component" stroke="#6b9a95" stroke-dasharray="2 2"/>
+            <text x="170" y="100" class="label" fill="#6b9a95" font-size="7.5">E_exc</text>
+            <!-- Componente E_obl (elipse vertical) -->
+            <ellipse cx="110" cy="110" rx="10" ry="50" class="component" stroke="#c49b72" stroke-dasharray="2 2"/>
+            <text x="126" y="65" class="label" fill="#c49b72" font-size="7.5">E_obl</text>
+            <!-- Analema (figura-8) -->
+            <path d="M 110,55 C 82,70 82,95 110,110 C 138,125 138,150 110,165 C 82,150 82,125 110,110 C 138,95 138,70 110,55" class="analemma"/>
+            <!-- Puntos extremos -->
+            <circle cx="110" cy="55" r="3" fill="#dbb48a"/>
+            <text x="120" y="54" class="param" font-size="7">~3 nov</text>
+            <circle cx="110" cy="165" r="3" fill="#dbb48a"/>
+            <text x="120" y="168" class="param" font-size="7">~12 feb</text>
+            <!-- Fórmula -->
+            <text x="110" y="200" text-anchor="middle" class="label">E(t) = E_exc + E_obl</text>
           </g>
-          <line x1="240" y1="20" x2="240" y2="180" stroke="rgba(220,230,250,0.06)" stroke-width="0.5"/>
-          <line x1="470" y1="20" x2="470" y2="180" stroke="rgba(220,230,250,0.06)" stroke-width="0.5"/>
+
+          <!-- Separadores -->
+          <line x1="240" y1="15" x2="240" y2="245" stroke="rgba(220,230,250,0.06)" stroke-width="0.5"/>
+          <line x1="470" y1="15" x2="470" y2="245" stroke="rgba(220,230,250,0.06)" stroke-width="0.5"/>
         </svg>
       </div>
       <div class="two-col fi">
@@ -283,9 +306,9 @@
               <input type="range" id="solar-spd" min="1" max="40" value="10" step="1" aria-valuemin="1"
                 aria-valuemax="40" aria-valuenow="10" aria-label="Velocidad de animación">
               <span class="slbl" id="solar-spd-lbl" aria-live="polite">10×</span>
-              <button id="solar-play" class="on" aria-label="Pausar animación">Pausar</button>
-              <button id="solar-reset" aria-label="Reiniciar animación">↺ Reiniciar</button>
-              <button id="solar-complete" aria-label="Completar año">Completar</button>
+              <button id="solar-play" type="button" class="on" aria-label="Pausar animación">Pausar</button>
+              <button id="solar-reset" type="button" aria-label="Reiniciar animación">↺ Reiniciar</button>
+              <button id="solar-complete" type="button" aria-label="Completar año">Completar</button>
             </div>
           </div>
           <div class="legrow" style="margin-top:0.45rem">
@@ -373,9 +396,9 @@
               <label for="pl-spd">Velocidad</label>
               <input type="range" id="pl-spd" min="1" max="80" value="25" step="1" aria-label="Velocidad de animación" aria-valuemin="1" aria-valuemax="80" aria-valuenow="25">
               <span class="slbl" id="pl-spd-lbl">25×</span>
-              <button id="pl-play" class="on" aria-label="Pausar animación">Pausar</button>
-              <button id="pl-reset" aria-label="Reiniciar">↺ Reiniciar</button>
-              <button id="pl-complete" aria-label="Completar ciclo">Completar</button>
+              <button id="pl-play" type="button" class="on" aria-label="Pausar animación">Pausar</button>
+              <button id="pl-reset" type="button" aria-label="Reiniciar">↺ Reiniciar</button>
+              <button id="pl-complete" type="button" aria-label="Completar ciclo">Completar</button>
             </div>
           </div>
           <div class="legrow" style="margin-top:0.45rem">
@@ -427,9 +450,9 @@
               <label for="ven-spd">Velocidad</label>
               <input type="range" id="ven-spd" min="1" max="80" value="30" step="1" aria-label="Velocidad de animación" aria-valuemin="1" aria-valuemax="80" aria-valuenow="30">
               <span class="slbl" id="ven-spd-lbl">30×</span>
-              <button id="ven-play" class="on" aria-label="Pausar animación">Pausar</button>
-              <button id="ven-reset" aria-label="Reiniciar">↺ Reiniciar</button>
-              <button id="ven-complete" aria-label="Ver ciclo de 8 años">Ver 8 años</button>
+              <button id="ven-play" type="button" class="on" aria-label="Pausar animación">Pausar</button>
+              <button id="ven-reset" type="button" aria-label="Reiniciar">↺ Reiniciar</button>
+              <button id="ven-complete" type="button" aria-label="Ver ciclo de 8 años">Ver 8 años</button>
             </div>
           </div>
           <div class="legrow" style="margin-top:0.45rem">
@@ -502,13 +525,13 @@
         <table class="dtable">
           <thead>
             <tr>
-              <th>Cuerpo</th>
-              <th>e</th>
-              <th>ε</th>
-              <th>T sidéreo</th>
-              <th>S sinódico*</th>
-              <th>Morfología</th>
-              <th>Nota</th>
+              <th scope="col">Cuerpo</th>
+              <th scope="col">e</th>
+              <th scope="col">ε</th>
+              <th scope="col">T sidéreo</th>
+              <th scope="col">S sinódico*</th>
+              <th scope="col">Morfología</th>
+              <th scope="col">Nota</th>
             </tr>
           </thead>
           <tbody>
