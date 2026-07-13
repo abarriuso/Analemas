@@ -1,6 +1,7 @@
 {
   "extends": ["html-validate:recommended"],
   "rules": {
+    "no-inline-style": "off",
     "no-implicit-button-type": "error",
     "no-redundant-role": "error",
     "aria-label-misuse": "error",

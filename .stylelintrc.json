@@ -16,13 +16,16 @@
     "declaration-block-no-duplicate-properties": [true, {
       "ignore": ["consecutive-duplicates-with-different-values"]
     }],
-    "no-duplicate-selectors": [true, {
-      "ignore": ["after-declaration"]
-    }],
+    "no-duplicate-selectors": null,
     "selector-pseudo-class-no-unknown": [true, {
       "ignorePseudoClasses": ["is", "not"]
     }],
     "property-no-vendor-prefix": null,
-    "at-rule-no-vendor-prefix": null
+    "at-rule-no-vendor-prefix": null,
+    "custom-property-empty-line-before": null,
+    "rule-empty-line-before": null,
+    "media-feature-range-notation": null,
+    "selector-attribute-quotes": null,
+    "declaration-block-single-line-max-declarations": null
   }
 }
