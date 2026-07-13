@@ -116,9 +116,9 @@ function nutationState(days) {
   return { dpsi: dp/10000*ARCSEC2RAD, deps: de/10000*ARCSEC2RAD };
 }
 function aberration(lon, lat, L) {
-  const dLon = lon - L;
-  const dLambda = -KAPPA * Math.cos(dLon);
-  const dBeta = -KAPPA * Math.sin(lat) * Math.sin(dLon);
+  const dLon = L - lon;
+  const dLambda = KAPPA * Math.sin(dLon) / (Math.cos(lat) + 1e-300);
+  const dBeta = KAPPA * Math.sin(lat) * Math.cos(dLon);
   return { lon: lon + dLambda, lat: lat + dBeta };
 }
 

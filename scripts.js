@@ -198,11 +198,11 @@
 
   // Aberración anual (primer orden). sunLon debe ser la LONGITUD DEL ÁPEX del
   // movimiento de la Tierra (dirección de su velocidad), NO la longitud del cuerpo.
-  //   Δλ = −κ·cos(λ − λ_ápice),  Δβ = −κ·sinβ·sin(λ − λ_ápice)
+  //   Δλ = +κ·sin(λ_ápice − λ) / cosβ,  Δβ = +κ·sinβ·cos(λ_ápice − λ)
   function aberration(lon, lat, sunLon) {
-    const dLon = lon - sunLon;
-    const dLambda = -KAPPA * Math.cos(dLon);
-    const dBeta = -KAPPA * Math.sin(lat) * Math.sin(dLon);
+    const dLon = sunLon - lon;
+    const dLambda = KAPPA * Math.sin(dLon) / (Math.cos(lat) + 1e-300);
+    const dBeta = KAPPA * Math.sin(lat) * Math.cos(dLon);
     return { lon: lon + dLambda, lat: lat + dBeta };
   }
 
