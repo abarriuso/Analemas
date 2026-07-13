@@ -211,15 +211,15 @@
     return E;
   }
 
-  // Aberración estelar anual (constante κ ≈ 20.49552 arcsec = 9.936e-5 rad)
-  // Δλ = -κ * cos(λ - λ☉)  ;  Δβ = -κ * sin(β) * sin(λ - λ☉)  (β≈0 para el Sol)
+  // Aberración anual (constante κ ≈ 20.49552 arcsec = 9.936e-5 rad)
   const KAPPA = 20.49552 * Math.PI / (180 * 3600); // rad
 
-  // Aberración anual (primer orden). sunLon debe ser la LONGITUD DEL ÁPEX del
-  // movimiento de la Tierra (dirección de su velocidad), NO la longitud del cuerpo.
+  // Aberración anual (primer orden, primado de la Tierra).
   //   Δλ = +κ·sin(λ_ápice − λ) / cosβ,  Δβ = +κ·sinβ·cos(λ_ápice − λ)
-  function aberration(lon, lat, sunLon) {
-    const dLon = sunLon - lon;
+  // donde λ_ápice es la LONGITUD DEL ÁPEX del movimiento de la Tierra
+  // (dirección de su velocidad), NO la longitud del cuerpo observado.
+  function aberration(lon, lat, apexLon) {
+    const dLon = apexLon - lon;
     const dLambda = KAPPA * Math.sin(dLon) / (Math.cos(lat) + 1e-300);
     const dBeta = KAPPA * Math.sin(lat) * Math.cos(dLon);
     return { lon: lon + dLambda, lat: lat + dBeta };
@@ -509,7 +509,7 @@
     if (!cv) return;
     const ctx = cv.getContext('2d');
     if (!ctx) return;
-    const currentEpsDeg = 23.44, currentEps = currentEpsDeg * DEG;
+    const currentEpsDeg = 23.4392911; // oblicuidad media J2000.0 (EPS0 en grados)
     const currentEcc = ECC0;
     let currentPoints = [];
     let xc = 0, yc = 0, xRange = 1, yRange = 1;
@@ -616,7 +616,7 @@
         }
 
         events.forEach(ev => {
-          const idx = Math.floor((ev.day / TROPICAL_YEAR) * currentPoints.length);
+          const idx = Math.floor((ev.day / EARTH_T) * currentPoints.length);
           if (idx >= currentPoints.length) return;
           const p = currentPoints[idx];
           const x = px(p), y = py(p);
@@ -731,7 +731,7 @@
 
         const lblSize = isMobile ? '7px' : '9.5px';
         MONTHS.forEach(([n, d]) => {
-          const idx = Math.floor((d / TROPICAL_YEAR) * SOLAR_PTS.length);
+          const idx = Math.floor((d / EARTH_T) * SOLAR_PTS.length);
           if (idx > end) return;
           const p = SOLAR_PTS[idx];
           ctx.beginPath(); ctx.arc(MX(p.x), MY(p.y), 3.5, 0, TAU);
