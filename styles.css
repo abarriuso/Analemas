@@ -118,12 +118,6 @@ nav {
   gap: 0.6rem;
 }
 
-.nav-dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--warm);
-}
 
 .nav-links {
   display: flex;
