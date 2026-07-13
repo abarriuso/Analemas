@@ -99,6 +99,12 @@ const NUT80 = [
   [1,0,-2,2,0,-1.0,0.0,0.0,0.0],[2,0,0,2,0,1.0,0.0,0.0,0.0],[0,0,2,4,2,-1.0,0.0,0.0,0.0],
   [0,1,0,1,0,1.0,0.0,0.0,0.0]
 ];
+function precessionState(days) {
+  const T = days / 36525.0;
+  const pA = (5028.796195 * T + 1.1054348 * T * T + 0.00007964 * T * T * T) * ARCSEC2RAD;
+  const epsMean = (84381.448 - 46.8150 * T - 0.00059 * T * T + 0.001813 * T * T * T) * ARCSEC2RAD;
+  return { precLon: pA, epsMean };
+}
 function nutationState(days) {
   const T = days / 36525.0;
   const l  = DEG * (134.96340251 + 1717915923.2178 * T + 31.310 * T * T + 0.064 * T * T * T);
@@ -113,7 +119,8 @@ function nutationState(days) {
     dp += (t[5] + t[6]*T) * Math.sin(arg);
     de += (t[7] + t[8]*T) * Math.cos(arg);
   }
-  return { dpsi: dp/10000*ARCSEC2RAD, deps: de/10000*ARCSEC2RAD };
+  const pre = precessionState(days);
+  return { dpsi: dp/10000*ARCSEC2RAD, deps: de/10000*ARCSEC2RAD, precLon: pre.precLon, epsTrue: pre.epsMean + de/10000*ARCSEC2RAD };
 }
 function aberration(lon, lat, L) {
   const dLon = L - lon;
@@ -139,8 +146,8 @@ function eqTime(t, signoCorregido) {
   const velLon = Math.atan2(e2.y - e1.y, e2.x - e1.x);
   const ab = aberration(lam, 0, velLon);
   const nu = nutationState(t);
-  const lamApp = ab.lon + nu.dpsi;            // longitud aparente
-  const eps = EPS0 + nu.deps;                 // oblicuidad verdadera
+  const lamApp = ab.lon + nu.dpsi + nu.precLon;  // long. aparente (aberr. + nut. + precesión)
+  const eps = nu.epsTrue;                  // oblicuidad verdadera (precesión + Δε)
   const t2 = Math.tan(eps / 2);
   const y = t2 * t2;
   const obl = y * Math.sin(2 * lamApp) - (y * y / 2) * Math.sin(4 * lamApp) + (y * y * y / 3) * Math.sin(6 * lamApp);
@@ -203,7 +210,8 @@ for (let d = 0; d <= 8 * 365.25 + 600; d += 0.05) {
   const sx = -pe.x, sy = -pe.y, sz = -pe.z;
   const gm = Math.hypot(gx, gy, gz), sm = Math.hypot(sx, sy, sz);
   const elong = Math.acos(Math.max(-1, Math.min(1, (gx * sx + gy * sy + gz * sz) / (gm * sm)))) / DEG;
-  let lon = Math.atan2(gy, gx) / DEG; if (lon < 0) lon += 360;
+  const nutV = nutationState(d);
+  let lon = (Math.atan2(gy, gx) + nutV.dpsi + nutV.precLon) / DEG; if (lon < 0) lon += 360;
   pts.push({ d, elong, lon, inferior: gm < sm });
 }
 const ics = [];

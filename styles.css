@@ -14,13 +14,8 @@
   --line3:   rgba(220,230,250,0.16);
   --hi:      #8a98b0;
   --hi2:     #a2b2cc;
-  --hi3:     #c0cee6;
   --warm:    #c49b72;
   --warm2:   #dbb48a;
-  --cool:    #6b9a95;
-  --cool2:   #87b8b2;
-  --star:    rgba(120,140,170,0.4);
-  --star-bright: rgba(160,180,210,0.8);
 
   /* ═══ Colores planetarios ═══ */
   --planet-mercury:  #909098;
@@ -35,7 +30,6 @@
 
   /* ═══ Semánticos retrogradación ═══ */
   --retro:           #c03030;
-  --retro-alpha:     rgba(192,48,48,0.85);
 
   --sans: 'Inter', system-ui, sans-serif;
   --mono: 'JetBrains Mono', 'Courier New', monospace;
@@ -976,8 +970,6 @@ footer {
   .hero-scroll {
     animation: none;
   }
-  .nav-dot {
-  }
   #starfield {
     animation: none;
   }
@@ -1274,7 +1266,7 @@ input[type="range"]::-moz-range-thumb {
 
 @media print {
   body { overflow: visible !important; }
-  nav, .nav-toggle, canvas, .controls, #planet-selector, button { display: none !important; }
+  nav, canvas, .controls, #planet-selector, button { display: none !important; }
   #hero { min-height: auto; padding: 1rem; }
   #hero h1 { font-size: 2rem; }
   section { page-break-inside: avoid; break-inside: avoid; }

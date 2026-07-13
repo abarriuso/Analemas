@@ -59,8 +59,17 @@
     [0,1,0,1,0,1.0,0.0,0.0,0.0]
   ];
 
-  // Devuelve la nutación y la oblicuidad verdadera en el día d (días desde J2000.0).
-  // T = siglos julianos desde J2000.0. Argumentos medios de Meeus (eq. 22.1).
+  // Precesión P03 (IAU 2006, Capitaine et al. 2003): precesión general en
+  // longitud y oblicuidad media. T = siglos julianos desde J2000.0.
+  function precessionState(days) {
+    const T = days / 36525.0;
+    const pA = (5028.796195 * T + 1.1054348 * T * T + 0.00007964 * T * T * T) * ARCSEC2RAD;
+    const epsMean = (84381.448 - 46.8150 * T - 0.00059 * T * T + 0.001813 * T * T * T) * ARCSEC2RAD;
+    return { precLon: pA, epsMean };
+  }
+
+  // Devuelve la nutación (Δψ, Δε), oblicuidad verdadera y precesión (P03) en el
+  // día d (días desde J2000.0). T = siglos julianos. Argumentos medios de Meeus (eq. 22.1).
   function nutationState(days) {
     const T = days / 36525.0;
     const l  = DEG * (134.96340251 + 1717915923.2178 * T + 31.310 * T * T + 0.064 * T * T * T);
@@ -75,10 +84,10 @@
       dp += (t[5] + t[6] * T) * Math.sin(arg);
       de += (t[7] + t[8] * T) * Math.cos(arg);
     }
-    const dpsi = dp / 10000 * ARCSEC2RAD;   // rad (coef. en 0.1 mas)
-    const deps = de / 10000 * ARCSEC2RAD;   // rad
-    const eps0 = (84381.448 - 46.8150 * T - 0.00059 * T * T + 0.001813 * T * T * T) * ARCSEC2RAD;
-    return { dpsi, deps, epsTrue: eps0 + deps };
+    const pre = precessionState(days);
+    const dpsi = dp / 10000 * ARCSEC2RAD;
+    const deps = de / 10000 * ARCSEC2RAD;
+    return { dpsi, deps, epsTrue: pre.epsMean + deps, precLon: pre.precLon };
   }
 
   // Rendimiento y dispositivo
@@ -97,7 +106,7 @@
   const SOLAR_Y_PADDING = 0.14;    // padding vertical del analema solar
   const PLANET_PADDING = 0.15;     // padding del analema planetario
   const VENUS_RADIUS_RATIO = 0.42; // radio del pentagrama de Venus
-  const VENUS_VENUS_MAX_ELONG = 48;      // elongación máxima para escala de Venus
+  const VENUS_MAX_ELONG = 48;      // elongación máxima para escala de Venus
   const GRID_DIVISIONS = 4;        // número de divisiones de la cuadrícula
 
   // Año tropico para mapeo día→índice (365.25 ≈ año tropico, no anomalístico)
@@ -275,8 +284,8 @@
       // Longitud aparente (aberr. anual + nutación en longitud Δψ) para E_obl y declinación
       const ab = aberration(lamGeo, 0, velLon);
       const nut = nutationState(d);
-      const lamApp = ab.lon + nut.dpsi;          // longitud aparente (aberr. + nutación)
-      const epsUsed = epsRad + nut.deps;   // oblicuidad verdadera (media + Δε)
+      const lamApp = ab.lon + nut.dpsi + nut.precLon;  // long. aparente (aberr. + nut. + precesión)
+      const epsUsed = nut.epsTrue;   // oblicuidad verdadera (precesión + Δε)
       const t2 = Math.tan(epsUsed / 2);
       const t4 = t2 * t2 * t2 * t2;
       const t6 = t4 * t2 * t2;
@@ -284,7 +293,7 @@
         -(2 * ecc - ecc * ecc * ecc / 4) * Math.sin(M) -
         (5 * ecc * ecc / 4) * Math.sin(2 * M) -
         (13 * ecc * ecc * ecc / 12) * Math.sin(3 * M);
-      // E_obl usa la longitud APARANTE (Meeus 1998 cap. 28; Hughes et al. 1989)
+      // E_obl usa la longitud aparente (Meeus 1998 cap. 28; Hughes et al. 1989).
       const obl =
         t2 * t2 * Math.sin(2 * lamApp) -
         (t4 / 2) * Math.sin(4 * lamApp) +
@@ -362,7 +371,7 @@
 
   // Vincula controles play/reset/complete/velocity a un estado y draw function
   function bindControlEvents(refs, state, drawFn, opts) {
-    const { totalDays, defaultSpeed = 10, speedIncrement = 0.12, updateBtn, getResult } = opts;
+    const { totalDays, updateBtn } = opts;
     if (refs.spd) refs.spd.addEventListener('input', function () {
       if (refs.spdLbl) refs.spdLbl.textContent = this.value + '×';
     });
@@ -393,7 +402,6 @@
     if (!ctx) return;
     let W, H;
     let stars = [];
-    let animationId = null;
     let lastFrame = 0;
 
     function initStars() {
@@ -456,14 +464,14 @@
     function animate(ts) {
       if (!cv.parentElement) return;
       if (!starfieldInView) return;
-      if (ts - lastFrame < FRAME_TIME) { animationId = requestAnimationFrame(animate); return; }
+      if (ts - lastFrame < FRAME_TIME) { requestAnimationFrame(animate); return; }
       lastFrame = ts;
       try {
         ctx.clearRect(0, 0, W, H);
         updateStars();
         drawStars(ts);
       } catch (e) { console.warn('Canvas error:', e); }
-      animationId = requestAnimationFrame(animate);
+      requestAnimationFrame(animate);
     }
 
     // Usar utilidad unificada de resize
@@ -491,7 +499,6 @@
     
     let lastTimestamp = 0;
     let baseWidth = 0, baseHeight = 0;
-    let animationId = null;
     let cachedScaleX = 1, cachedScaleY = 1;
 
     function updateAnalema() {
@@ -544,7 +551,7 @@
 
     function draw(ts) {
       if (!heroInView) return;
-      animationId = requestAnimationFrame(draw);
+      requestAnimationFrame(draw);
       if (baseWidth === 0 || baseHeight === 0) return;
       if (ts - lastTimestamp < FRAME_TIME) return;
       lastTimestamp = ts;
@@ -612,7 +619,7 @@
         ctx.restore();
       } catch (e) { console.warn('Canvas error:', e); }
     }
-    animationId = requestAnimationFrame(draw);
+    requestAnimationFrame(draw);
   })();
 
   // =========================================================================
@@ -624,7 +631,6 @@
     if (!cv) return;
     const ctx = cv.getContext('2d');
     if (!ctx) return;
-    let animationId = null;
     let lastFrame = 0;
     let logicW = 0, logicH = 0;
 
@@ -750,8 +756,6 @@
 
     bindControlEvents(refs, solarState, () => requestAnimationFrame(draw), {
       totalDays: SOLAR_PTS.length - 1,
-      defaultSpeed: 10,
-      speedIncrement: SOLAR_DAY_FACTOR,
       updateBtn: () => updatePlayBtn(refs.play, solarState.day >= SOLAR_PTS.length - 1, solarState.playing)
     });
   })();
@@ -809,14 +813,14 @@
       const dx = pp.x - pe.x, dy = pp.y - pe.y, dz = pp.z - pe.z;
       const r = Math.hypot(dx, dy, dz);
 
-      // Longitud y latitud eclíptica geocéntrica
+      // Longitud y latitud eclíptica geocéntrica (precesión + nutación Δψ → true-of-date)
       const nut = nutationState(d);
-      const lon = Math.atan2(dy, dx) + nut.dpsi;   // longitud aparente (nutación Δψ)
+      const lon = Math.atan2(dy, dx) + nut.dpsi + nut.precLon;
       const beta = Math.asin(Math.max(-1, Math.min(1, dz / r)));
 
-      // Transformación a ecuatorial J2000: (lon, beta) -> (ra, dec)
+      // Transformación a ecuatorial del momento: (lon, beta) -> (ra, dec)
       // rotación alrededor del eje x por -ε.  Fórmula libre de división por cosβ
-      // (Meeus 1998, cap. 12). Usa oblicuidad VERDADERA (media + Δε).
+      // (Meeus 1998, cap. 12). Usa oblicuidad verdadera (precesión + Δε).
       const sinEps = Math.sin(nut.epsTrue), cosEps = Math.cos(nut.epsTrue);
       const sinLon = Math.sin(lon), cosLon = Math.cos(lon);
       const sinBeta = Math.sin(beta), cosBeta = Math.cos(beta);
@@ -826,7 +830,7 @@
       const dec = Math.asin(Math.max(-1, Math.min(1, sinBeta * cosEps + cosBeta * sinEps * sinLon)));
 
       // AR del Sol (Tierra en z≈0, beta=0)
-      const sunLon = Math.atan2(-pe.y, -pe.x) + nut.dpsi;
+      const sunLon = Math.atan2(-pe.y, -pe.x) + nut.dpsi + nut.precLon;
       const sunRA = Math.atan2(Math.sin(sunLon) * cosEps, Math.cos(sunLon));
 
       // Diferencia en AR (eje horizontal del analema planetario)
@@ -915,7 +919,6 @@
     if (!cv) return;
     const ctx = cv.getContext('2d');
     if (!ctx) return;
-    let animationId = null;
     let lastFrame = 0;
     let logicW = 0, logicH = 0;
 
@@ -1029,8 +1032,6 @@
 
     bindControlEvents(refs, planetState, () => requestAnimationFrame(draw), {
       totalDays: getPlanetPoints(selectedPlanet).pts.length - 1,
-      defaultSpeed: 10,
-      speedIncrement: PLANET_DAY_FACTOR,
       updateBtn: () => {
         const { pts } = getPlanetPoints(selectedPlanet);
         updatePlayBtn(refs.play, planetState.day >= pts.length - 1, planetState.playing);
@@ -1046,7 +1047,6 @@
     if (!cv) return;
     const ctx = cv.getContext('2d');
     if (!ctx) return;
-    let animationId = null;
     let lastFrame = 0;
     let logicW = 0, logicH = 0;
     const TOTAL_DAYS = Math.round(8 * TROPICAL_YEAR); // 2922 días
@@ -1082,7 +1082,8 @@
         const pe = orbPosInc(earthEl, d);
         const pv = orbPosInc(V, d);
         const dx = pv.x - pe.x, dy = pv.y - pe.y, dz = pv.z; // Tierra en z ≈ 0
-        const lon = Math.atan2(dy, dx) + nutationState(d).dpsi; // longitud aparente (Δψ)
+        const nutV = nutationState(d);
+        const lon = Math.atan2(dy, dx) + nutV.dpsi + nutV.precLon; // long. true-of-date
         const sunX = -pe.x, sunY = -pe.y;
         const dot = sunX * dx + sunY * dy;
         const sunDist = Math.hypot(sunX, sunY);      // distancia Tierra–Sol
@@ -1302,8 +1303,6 @@
 
     bindControlEvents(refs, venusState, () => requestAnimationFrame(draw), {
       totalDays: TOTAL_DAYS,
-      defaultSpeed: 10,
-      speedIncrement: VENUS_DAY_FACTOR,
       updateBtn: () => updatePlayBtn(refs.play, venusState.day >= TOTAL_DAYS, venusState.playing)
     });
   })();
