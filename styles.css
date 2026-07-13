@@ -69,7 +69,7 @@ body {
   font-weight: 350;
   font-size: 16px;
   line-height: 1.7;
-  overflow-x: clip;
+  overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -125,12 +125,6 @@ nav {
   height: 5px;
   border-radius: 50%;
   background: var(--warm);
-  animation: ndot 4s ease-in-out infinite;
-}
-
-@keyframes ndot {
-  0%, 100% { opacity: 0.8; }
-  50% { opacity: 0.2; }
 }
 
 .nav-links {
@@ -191,7 +185,7 @@ nav {
   align-items: center;
   justify-content: flex-start;
   padding: 5rem 2rem 0;
-  overflow-x: clip;
+  overflow-x: hidden;
 }
 
 .hero-inner {
@@ -983,7 +977,6 @@ footer {
     animation: none;
   }
   .nav-dot {
-    animation: none;
   }
   #starfield {
     animation: none;
@@ -1199,7 +1192,7 @@ input[type="range"]::-webkit-slider-thumb {
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: #e67e22;
+  background: var(--warm);
   margin-top: -5px;
   cursor: pointer;
 }
@@ -1244,17 +1237,6 @@ input:focus-visible {
   transition: background var(--transition-fast);
 }
 
-/* Mejor cursor en botones de la barra de planetas */
-.pbtn:focus-visible {
-  outline: 2px solid var(--warm);
-  outline-offset: 2px;
-}
-
-.ctoolbar button:focus-visible {
-  outline: 2px solid var(--warm);
-  outline-offset: 2px;
-}
-
 /* Skip to main content link para accesibilidad */
 .skip-link {
   position: absolute;
@@ -1285,7 +1267,7 @@ input[type="range"]::-moz-range-thumb {
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: #e67e22;
+  background: var(--warm);
   border: none;
   cursor: pointer;
 }
@@ -1293,9 +1275,7 @@ input[type="range"]::-moz-range-thumb {
 @media print {
   body { overflow: visible !important; }
   nav, .nav-toggle, canvas, .controls, #planet-selector, button { display: none !important; }
-  .hero { min-height: auto; padding: 1rem; }
-  .hero h1 { font-size: 2rem; }
-  .section { page-break-inside: avoid; break-inside: avoid; }
-  .info-grid { display: block; }
-  .info-card { width: 100%; margin-bottom: 1rem; border: 1px solid #ccc; }
+  #hero { min-height: auto; padding: 1rem; }
+  #hero h1 { font-size: 2rem; }
+  section { page-break-inside: avoid; break-inside: avoid; }
 }

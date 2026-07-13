@@ -14,9 +14,96 @@
   const M0_EARTH = 357.5293 * DEG;     // anomalía media terrestre en J2000.0 (1.5 ene 2000)
   const EARTH_T = 365.259636;          // año anomalístico: periodo de propagación de la anomalía media
 
+  // ── Nutación IAU 1980 (serie completa de 106 términos; ERFA nut80.c / SpacePy coeff80) ──
+  // Coeficientes en 0.1 mas (milisegundos de arco). Argumentos: l (anomalía media Lunar),
+  // lp (anomalía media Solar), F (= L−Ω̄), D (elongación), Om (long. nodo Lunar).
+  // dp (Δψ, longitud) = Σ (sp + spt·T)·sin(arg);  de (Δε, oblicuidad) = Σ (ce + cet·T)·cos(arg).
+  const ARCSEC2RAD = Math.PI / (180 * 3600);
+  const NUT80 = [
+    [0,0,0,0,1,-171996.0,-174.2,92025.0,8.9],[0,0,0,0,2,2062.0,0.2,-895.0,0.5],
+    [-2,0,2,0,1,46.0,0.0,-24.0,0.0],[2,0,-2,0,0,11.0,0.0,0.0,0.0],[-2,0,2,0,2,-3.0,0.0,1.0,0.0],
+    [1,-1,0,-1,0,-3.0,0.0,0.0,0.0],[0,-2,2,-2,1,-2.0,0.0,1.0,0.0],[2,0,-2,0,1,1.0,0.0,0.0,0.0],
+    [0,0,2,-2,2,-13187.0,-1.6,5736.0,-3.1],[0,1,0,0,0,1426.0,-3.4,54.0,-0.1],
+    [0,1,2,-2,2,-517.0,1.2,224.0,-0.6],[0,-1,2,-2,2,217.0,-0.5,-95.0,0.3],
+    [0,0,2,-2,1,129.0,0.1,-70.0,0.0],[2,0,0,-2,0,48.0,0.0,1.0,0.0],[0,0,2,-2,0,-22.0,0.0,0.0,0.0],
+    [0,2,0,0,0,17.0,-0.1,0.0,0.0],[0,1,0,0,1,-15.0,0.0,9.0,0.0],[0,2,2,-2,2,-16.0,0.1,7.0,0.0],
+    [0,-1,0,0,1,-12.0,0.0,6.0,0.0],[-2,0,0,2,1,-6.0,0.0,3.0,0.0],[0,-1,2,-2,1,-5.0,0.0,3.0,0.0],
+    [2,0,0,-2,1,4.0,0.0,-2.0,0.0],[0,1,2,-2,1,4.0,0.0,-2.0,0.0],[1,0,0,-1,0,-4.0,0.0,0.0,0.0],
+    [2,1,0,-2,0,1.0,0.0,0.0,0.0],[0,0,-2,2,1,1.0,0.0,0.0,0.0],[0,1,-2,2,0,-1.0,0.0,0.0,0.0],
+    [0,1,0,0,2,1.0,0.0,0.0,0.0],[-1,0,0,1,1,1.0,0.0,0.0,0.0],[0,1,2,-2,0,-1.0,0.0,0.0,0.0],
+    [0,0,2,0,2,-2274.0,-0.2,977.0,-0.5],[1,0,0,0,0,712.0,0.1,-7.0,0.0],[0,0,2,0,1,-386.0,-0.4,200.0,0.0],
+    [1,0,2,0,2,-301.0,0.0,129.0,-0.1],[1,0,0,-2,0,-158.0,0.0,-1.0,0.0],[-1,0,2,0,2,123.0,0.0,-53.0,0.0],
+    [0,0,0,2,0,63.0,0.0,-2.0,0.0],[1,0,0,0,1,63.0,0.1,-33.0,0.0],[-1,0,0,0,1,-58.0,-0.1,32.0,0.0],
+    [-1,0,2,2,2,-59.0,0.0,26.0,0.0],[1,0,2,0,1,-51.0,0.0,27.0,0.0],[0,0,2,2,2,-38.0,0.0,16.0,0.0],
+    [2,0,0,0,0,29.0,0.0,-1.0,0.0],[1,0,2,-2,2,29.0,0.0,-12.0,0.0],[2,0,2,0,2,-31.0,0.0,13.0,0.0],
+    [0,0,2,0,0,26.0,0.0,-1.0,0.0],[-1,0,2,0,1,21.0,0.0,-10.0,0.0],[-1,0,0,2,1,16.0,0.0,-8.0,0.0],
+    [1,0,0,-2,1,-13.0,0.0,7.0,0.0],[-1,0,2,2,1,-10.0,0.0,5.0,0.0],[1,1,0,-2,0,-7.0,0.0,0.0,0.0],
+    [0,1,2,0,2,7.0,0.0,-3.0,0.0],[0,-1,2,0,2,-7.0,0.0,3.0,0.0],[1,0,2,2,2,-8.0,0.0,3.0,0.0],
+    [1,0,0,2,0,6.0,0.0,0.0,0.0],[2,0,2,-2,2,6.0,0.0,-3.0,0.0],[0,0,0,2,1,-6.0,0.0,3.0,0.0],
+    [0,0,2,2,1,-7.0,0.0,3.0,0.0],[1,0,2,-2,1,6.0,0.0,-3.0,0.0],[0,0,0,-2,1,-5.0,0.0,3.0,0.0],
+    [1,-1,0,0,0,5.0,0.0,0.0,0.0],[2,0,2,0,1,-5.0,0.0,3.0,0.0],[0,1,0,-2,0,-4.0,0.0,0.0,0.0],
+    [1,0,-2,0,0,4.0,0.0,0.0,0.0],[0,0,0,1,0,-4.0,0.0,0.0,0.0],[1,1,0,0,0,-3.0,0.0,0.0,0.0],
+    [1,0,2,0,0,3.0,0.0,0.0,0.0],[1,-1,2,0,2,-3.0,0.0,1.0,0.0],[-1,-1,2,2,2,-3.0,0.0,1.0,0.0],
+    [-2,0,0,0,1,-2.0,0.0,1.0,0.0],[3,0,2,0,2,-3.0,0.0,1.0,0.0],[0,-1,2,2,2,-3.0,0.0,1.0,0.0],
+    [1,1,2,0,2,2.0,0.0,-1.0,0.0],[-1,0,2,-2,1,-2.0,0.0,1.0,0.0],[2,0,0,0,1,2.0,0.0,-1.0,0.0],
+    [1,0,0,0,2,-2.0,0.0,1.0,0.0],[3,0,0,0,0,2.0,0.0,0.0,0.0],[0,0,2,1,2,2.0,0.0,-1.0,0.0],
+    [-1,0,0,0,2,1.0,0.0,-1.0,0.0],[1,0,0,-4,0,-1.0,0.0,0.0,0.0],[-2,0,2,2,2,1.0,0.0,-1.0,0.0],
+    [-1,0,2,4,2,-2.0,0.0,1.0,0.0],[2,0,0,-4,0,-1.0,0.0,0.0,0.0],[1,1,2,-2,2,1.0,0.0,-1.0,0.0],
+    [1,0,2,2,1,-1.0,0.0,1.0,0.0],[-2,0,2,4,2,-1.0,0.0,1.0,0.0],[-1,0,4,0,2,1.0,0.0,0.0,0.0],
+    [1,-1,0,-2,0,1.0,0.0,0.0,0.0],[2,0,2,-2,1,1.0,0.0,-1.0,0.0],[2,0,2,2,2,-1.0,0.0,0.0,0.0],
+    [1,0,0,2,1,-1.0,0.0,0.0,0.0],[0,0,4,-2,2,1.0,0.0,0.0,0.0],[3,0,2,-2,2,1.0,0.0,0.0,0.0],
+    [1,0,2,-2,0,-1.0,0.0,0.0,0.0],[0,1,2,0,1,1.0,0.0,0.0,0.0],[-1,-1,0,2,1,1.0,0.0,0.0,0.0],
+    [0,0,-2,0,1,-1.0,0.0,0.0,0.0],[0,0,2,-1,2,-1.0,0.0,0.0,0.0],[0,1,0,2,0,-1.0,0.0,0.0,0.0],
+    [1,0,-2,-2,0,-1.0,0.0,0.0,0.0],[0,-1,2,0,1,-1.0,0.0,0.0,0.0],[1,1,0,-2,1,-1.0,0.0,0.0,0.0],
+    [1,0,-2,2,0,-1.0,0.0,0.0,0.0],[2,0,0,2,0,1.0,0.0,0.0,0.0],[0,0,2,4,2,-1.0,0.0,0.0,0.0],
+    [0,1,0,1,0,1.0,0.0,0.0,0.0]
+  ];
+
+  // Devuelve la nutación y la oblicuidad verdadera en el día d (días desde J2000.0).
+  // T = siglos julianos desde J2000.0. Argumentos medios de Meeus (eq. 22.1).
+  function nutationState(days) {
+    const T = days / 36525.0;
+    const l  = DEG * (134.96340251 + 1717915923.2178 * T + 31.310 * T * T + 0.064 * T * T * T);
+    const lp = DEG * (357.52910000 + 35999.04909 * T - 0.0001559 * T * T - 0.00000048 * T * T * T);
+    const F  = DEG * (93.27209062 + 483202.01749 * T - 12.5390 * T * T - 0.0080 * T * T * T);
+    const D  = DEG * (297.85019547 + 445267.11140 * T - 5.195 * T * T + 0.007 * T * T * T);
+    const Om = DEG * (125.04455501 - 482890.53931 * T + 7.455 * T * T + 0.008 * T * T * T);
+    let dp = 0, de = 0;
+    for (let k = 0; k < NUT80.length; k++) {
+      const t = NUT80[k];
+      const arg = t[0] * l + t[1] * lp + t[2] * F + t[3] * D + t[4] * Om;
+      dp += (t[5] + t[6] * T) * Math.sin(arg);
+      de += (t[7] + t[8] * T) * Math.cos(arg);
+    }
+    const dpsi = dp / 10000 * ARCSEC2RAD;   // rad (coef. en 0.1 mas)
+    const deps = de / 10000 * ARCSEC2RAD;   // rad
+    const eps0 = (84381.448 - 46.8150 * T - 0.00059 * T * T + 0.001813 * T * T * T) * ARCSEC2RAD;
+    return { dpsi, deps, epsTrue: eps0 + deps };
+  }
+
   // Rendimiento y dispositivo
   const FRAME_TIME = 1000 / 60;      // ~16.67 ms → cap a 60 fps
-  let isMobile = window.innerWidth < 768;
+
+  // Constantes de animación
+  const SOLAR_DAY_FACTOR = 0.12;    // incremento de día por frame en sección solar
+  const PLANET_DAY_FACTOR = 0.11;   // incremento de día por frame en sección planetaria
+  const VENUS_DAY_FACTOR = 0.15;    // incremento de día por frame en Venus
+  const HERO_ANIM_SPEED = 0.004;    // velocidad de animación del hero
+
+  // Constantes de canvas
+  const HERO_X_RATIO = 0.20;       // factor de escala X del hero
+  const HERO_Y_RATIO = 0.42;       // factor de escala Y del hero
+  const SOLAR_X_PADDING = 0.18;    // padding horizontal del analema solar
+  const SOLAR_Y_PADDING = 0.14;    // padding vertical del analema solar
+  const PLANET_PADDING = 0.15;     // padding del analema planetario
+  const VENUS_RADIUS_RATIO = 0.42; // radio del pentagrama de Venus
+  const VENUS_VENUS_MAX_ELONG = 48;      // elongación máxima para escala de Venus
+  const GRID_DIVISIONS = 4;        // número de divisiones de la cuadrícula
+
+  // Año tropico para mapeo día→índice (365.25 ≈ año tropico, no anomalístico)
+  const TROPICAL_YEAR = 365.25
+  function getIsMobile() { return window.innerWidth < 768; }
+  let isMobile = getIsMobile();
   const hasLowMemory = (navigator.hardwareConcurrency !== undefined) && (navigator.hardwareConcurrency <= 2);
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -70,7 +157,7 @@
     // Initial + debounced resize
     doResize();
     window.addEventListener('resize', () => {
-      isMobile = window.innerWidth < 768;
+      isMobile = getIsMobile();
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(doResize, debounceMs);
     });
@@ -79,16 +166,16 @@
   }
 
   // ── Paleta de colores (modo oscuro fijo) ─────────────────────────────────
-  const CBG    = ()      => '#12141a';
-  const CGRID  = ()      => 'rgba(180,190,210,0.06)';
-  const CAXIS  = ()      => 'rgba(180,190,210,0.14)';
-  const CBLUE  = (a = 1) => `rgba(160,180,210,${a})`;
-  const CWARM  = (a = 1) => `rgba(196,155,114,${a})`;
-  const CDOT   = ()      => '#dbb48a';
-  const CTTL   = ()      => 'rgba(190,200,215,0.8)';
-  const CMON   = (a = 1) => `rgba(160,175,200,${a})`;
-  const CLBL   = ()      => 'rgba(180,190,210,0.85)';
-  const CRETRO = (a = 1) => `rgba(192,48,48,${a})`;
+  const colorBg       = ()      => '#12141a';
+  const colorGrid     = ()      => 'rgba(180,190,210,0.06)';
+  const colorAxis     = ()      => 'rgba(180,190,210,0.14)';
+  const colorBlue     = (a = 1) => `rgba(160,180,210,${a})`;
+  const colorWarm     = (a = 1) => `rgba(196,155,114,${a})`;
+  const colorDot      = ()      => '#dbb48a';
+  const colorTitle    = ()      => 'rgba(190,200,215,0.8)';
+  const colorMonth    = (a = 1) => `rgba(160,175,200,${a})`;
+  const colorLabel    = ()      => 'rgba(180,190,210,0.85)';
+  const colorRetro    = (a = 1) => `rgba(192,48,48,${a})`;
 
   // =========================================================================
   // 1. Utilidades astronómicas
@@ -109,6 +196,9 @@
   // Δλ = -κ * cos(λ - λ☉)  ;  Δβ = -κ * sin(β) * sin(λ - λ☉)  (β≈0 para el Sol)
   const KAPPA = 20.49552 * Math.PI / (180 * 3600); // rad
 
+  // Aberración anual (primer orden). sunLon debe ser la LONGITUD DEL ÁPEX del
+  // movimiento de la Tierra (dirección de su velocidad), NO la longitud del cuerpo.
+  //   Δλ = −κ·cos(λ − λ_ápice),  Δβ = −κ·sinβ·sin(λ − λ_ápice)
   function aberration(lon, lat, sunLon) {
     const dLon = lon - sunLon;
     const dLambda = -KAPPA * Math.cos(dLon);
@@ -169,29 +259,38 @@
     const pts = [];
     const steps = 2000;
     const T = EARTH_T;
-    const t2 = Math.tan(epsRad / 2);
-    const t4 = t2 * t2 * t2 * t2;
-    const t6 = t4 * t2 * t2;
     for (let i = 0; i <= steps; i++) {
       const d = (i / steps) * T;
       const ep = orbPos(1, ecc, T, M0_EARTH, d, OMEGA_EARTH);
       const M = ep.M;
       // Longitud eclíptica geocéntrica geométrica del Sol (= dirección Tierra → Sol)
       const lamGeo = Math.atan2(-ep.y, -ep.x);
-      // Longitud aparente (con aberración), para la declinación visual
-      const ab = aberration(lamGeo, 0, lamGeo);
-      const lamApp = ab.lon;
+      // Ápex de la aberración anual = dirección de la velocidad de la Tierra
+      // (derivada finita de la posición heliocéntrica). No es constante: la
+      // excentricidad terrestre hace variar módulo y dirección a lo largo del año.
+      const h = 0.5;
+      const e1 = orbPos(1, ecc, T, M0_EARTH, d - h, OMEGA_EARTH);
+      const e2 = orbPos(1, ecc, T, M0_EARTH, d + h, OMEGA_EARTH);
+      const velLon = Math.atan2(e2.y - e1.y, e2.x - e1.x);
+      // Longitud aparente (aberr. anual + nutación en longitud Δψ) para E_obl y declinación
+      const ab = aberration(lamGeo, 0, velLon);
+      const nut = nutationState(d);
+      const lamApp = ab.lon + nut.dpsi;          // longitud aparente (aberr. + nutación)
+      const epsUsed = epsRad + nut.deps;   // oblicuidad verdadera (media + Δε)
+      const t2 = Math.tan(epsUsed / 2);
+      const t4 = t2 * t2 * t2 * t2;
+      const t6 = t4 * t2 * t2;
       const exc =
         -(2 * ecc - ecc * ecc * ecc / 4) * Math.sin(M) -
         (5 * ecc * ecc / 4) * Math.sin(2 * M) -
         (13 * ecc * ecc * ecc / 12) * Math.sin(3 * M);
-      // E_obl usa la longitud GEOMÉTRICA (Meeus 1998 cap. 28; Hughes et al. 1989)
+      // E_obl usa la longitud APARANTE (Meeus 1998 cap. 28; Hughes et al. 1989)
       const obl =
-        t2 * t2 * Math.sin(2 * lamGeo) -
-        (t4 / 2) * Math.sin(4 * lamGeo) +
-        (t6 / 3) * Math.sin(6 * lamGeo);
+        t2 * t2 * Math.sin(2 * lamApp) -
+        (t4 / 2) * Math.sin(4 * lamApp) +
+        (t6 / 3) * Math.sin(6 * lamApp);
       const eqT = exc + obl;
-      const decl = Math.asin(Math.max(-1, Math.min(1, Math.sin(epsRad) * Math.sin(lamApp))));
+      const decl = Math.asin(Math.max(-1, Math.min(1, Math.sin(epsUsed) * Math.sin(lamApp))));
       pts.push({
         x: eqT,
         y: decl,
@@ -217,6 +316,73 @@
     return Number.isFinite(n) && n > 0 ? n : fallback;
   }
 
+  // ── Utilidades compartidas de UI ──────────────────────────────────────────
+
+  // Actualiza el botón play/pausa/reanudar de cualquier sección de canvas
+  function updatePlayBtn(btn, done, playing) {
+    if (!btn) return;
+    if (done) { btn.textContent = 'Reanudar'; btn.className = ''; btn.classList.add('ended'); }
+    else if (playing) { btn.textContent = 'Pausar'; btn.className = 'on'; }
+    else { btn.textContent = 'Reanudar'; btn.className = ''; }
+  }
+
+  // Crea un IntersectionObserver que gestiona lazy-start, pausa y prefersReducedMotion
+  function createSectionObserver(sectionEl, state, opts) {
+    const { threshold = 0.25, onStart, onRestart, drawFn } = opts;
+    let inView = false;
+    let animationId = null;
+    const obs = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        inView = entry.isIntersecting;
+        if (inView) {
+          if (!state.started) {
+            state.started = true;
+            if (onStart) onStart();
+          }
+          animationId = requestAnimationFrame(drawFn);
+        }
+      });
+    }, { threshold });
+    if (sectionEl) obs.observe(sectionEl);
+    return { get inView() { return inView; }, get animationId() { return animationId; }, set animationId(v) { animationId = v; } };
+  }
+
+  // Dibuja la cuadrícula y ejes de un canvas de analema
+  function drawGrid(ctx, MX, MY, X0, X1, Y0, Y1, W, H, xm, ym) {
+    for (let i = 0; i <= GRID_DIVISIONS; i++) {
+      ctx.strokeStyle = colorGrid(); ctx.lineWidth = 0.5;
+      ctx.beginPath(); ctx.moveTo(MX(X0 + i * (X1 - X0) / 4), ym); ctx.lineTo(MX(X0 + i * (X1 - X0) / 4), H - ym); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(xm, MY(Y0 + i * (Y1 - Y0) / 4)); ctx.lineTo(W - xm, MY(Y0 + i * (Y1 - Y0) / 4)); ctx.stroke();
+    }
+    ctx.strokeStyle = colorAxis(); ctx.lineWidth = 0.5; ctx.setLineDash([3, 5]);
+    ctx.beginPath(); ctx.moveTo(MX((X0 + X1) / 2), ym); ctx.lineTo(MX((X0 + X1) / 2), H - ym); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(xm, MY((Y0 + Y1) / 2)); ctx.lineTo(W - xm, MY((Y0 + Y1) / 2)); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Vincula controles play/reset/complete/velocity a un estado y draw function
+  function bindControlEvents(refs, state, drawFn, opts) {
+    const { totalDays, defaultSpeed = 10, speedIncrement = 0.12, updateBtn, getResult } = opts;
+    if (refs.spd) refs.spd.addEventListener('input', function () {
+      if (refs.spdLbl) refs.spdLbl.textContent = this.value + '×';
+    });
+    if (refs.play) refs.play.addEventListener('click', () => {
+      if (!state.started) { state.started = true; drawFn(); }
+      state.playing = !state.playing;
+      if (updateBtn) updateBtn();
+    });
+    if (refs.reset) refs.reset.addEventListener('click', () => {
+      state.day = 0; state.playing = true;
+      if (!state.started) { state.started = true; drawFn(); }
+      if (updateBtn) updateBtn();
+    });
+    if (refs.complete) refs.complete.addEventListener('click', () => {
+      state.day = totalDays; state.playing = false;
+      if (!state.started) { state.started = true; drawFn(); }
+      if (updateBtn) updateBtn();
+    });
+  }
+
   // =========================================================================
   // 2. Starfield (fondo estelar animado)
   // =========================================================================
@@ -224,6 +390,7 @@
     const cv = document.getElementById('starfield');
     if (!cv) return;
     const ctx = cv.getContext('2d');
+    if (!ctx) return;
     let W, H;
     let stars = [];
     let animationId = null;
@@ -295,7 +462,7 @@
         ctx.clearRect(0, 0, W, H);
         updateStars();
         drawStars(ts);
-      } catch (e) { /* canvas error no crítico */ }
+      } catch (e) { console.warn('Canvas error:', e); }
       animationId = requestAnimationFrame(animate);
     }
 
@@ -315,15 +482,15 @@
     const cv = document.getElementById('hero-canvas');
     if (!cv) return;
     const ctx = cv.getContext('2d');
+    if (!ctx) return;
     let currentEpsDeg = 23.44, currentEps = currentEpsDeg * DEG;
     let currentEcc = ECC0;
     let currentPoints = [];
     let xc = 0, yc = 0, xRange = 1, yRange = 1;
     let animProgress = 0;
-    const ANIM_SPEED = 0.004;
+    
     let lastTimestamp = 0;
     let baseWidth = 0, baseHeight = 0;
-    const dpr = window.devicePixelRatio || 1;
     let animationId = null;
     let cachedScaleX = 1, cachedScaleY = 1;
 
@@ -341,8 +508,8 @@
       if (eccSpan) eccSpan.textContent = currentEcc.toFixed(5);
       if (baseWidth > 0 && baseHeight > 0) {
         const ref = Math.min(baseWidth, baseHeight);
-        cachedScaleX = ref * 0.20 / xRange;
-        cachedScaleY = ref * 0.42 / yRange;
+        cachedScaleX = ref * HERO_X_RATIO / xRange;
+        cachedScaleY = ref * HERO_Y_RATIO / yRange;
       }
     }
 
@@ -353,8 +520,8 @@
       ctx.scale(dpr, dpr);
       ctx.imageSmoothingEnabled = true;
       const ref = Math.min(baseWidth, baseHeight);
-      cachedScaleX = ref * 0.20 / xRange;
-      cachedScaleY = ref * 0.42 / yRange;
+      cachedScaleX = ref * HERO_X_RATIO / xRange;
+      cachedScaleY = ref * HERO_Y_RATIO / yRange;
     }, { useContainer: true, aspectRatio: 1, minWidth: 200, maxWidth: 560, debounceMs: 100 });
 
     updateAnalema();
@@ -384,7 +551,7 @@
       if (currentPoints.length === 0) return;
       try {
         if (!prefersReducedMotion) {
-          animProgress += ANIM_SPEED;
+          animProgress += HERO_ANIM_SPEED;
           if (animProgress > 1) animProgress = 0;
         } else if (animProgress === 0) {
           animProgress = 1;
@@ -404,17 +571,17 @@
           if (i === 0) ctx.moveTo(px(p), py(p)); else ctx.lineTo(px(p), py(p));
         });
         ctx.closePath();
-        ctx.strokeStyle = CBLUE(0.25); ctx.lineWidth = 1.2; ctx.stroke();
+        ctx.strokeStyle = colorBlue(0.25); ctx.lineWidth = 1.2; ctx.stroke();
 
         const endIdx = Math.min(Math.floor(currentPoint), currentPoints.length - 1);
         for (let i = 1; i <= endIdx; i++) {
           const p1 = currentPoints[i - 1], p2 = currentPoints[i];
           ctx.beginPath(); ctx.moveTo(px(p1), py(p1)); ctx.lineTo(px(p2), py(p2));
-          ctx.strokeStyle = CWARM(0.8); ctx.lineWidth = 1.5; ctx.stroke();
+          ctx.strokeStyle = colorWarm(0.8); ctx.lineWidth = 1.5; ctx.stroke();
         }
 
         events.forEach(ev => {
-          const idx = Math.floor((ev.day / 365.25) * currentPoints.length);
+          const idx = Math.floor((ev.day / TROPICAL_YEAR) * currentPoints.length);
           if (idx >= currentPoints.length) return;
           const p = currentPoints[idx];
           const x = px(p), y = py(p);
@@ -435,15 +602,15 @@
         const cpIndex = Math.floor(currentPoint) % currentPoints.length;
         const cp = currentPoints[cpIndex];
         const cx = px(cp), cy = py(cp);
-        ctx.beginPath(); ctx.arc(cx, cy, 8, 0, TAU); ctx.fillStyle = CWARM(0.12); ctx.fill();
-        ctx.beginPath(); ctx.arc(cx, cy, 4, 0, TAU); ctx.fillStyle = CDOT(); ctx.fill();
+        ctx.beginPath(); ctx.arc(cx, cy, 8, 0, TAU); ctx.fillStyle = colorWarm(0.12); ctx.fill();
+        ctx.beginPath(); ctx.arc(cx, cy, 4, 0, TAU); ctx.fillStyle = colorDot(); ctx.fill();
 
-        ctx.fillStyle = CTTL();
+        ctx.fillStyle = colorTitle();
         ctx.font = `${isMobile ? 7 : 9}px "JetBrains Mono", monospace`;
         ctx.textAlign = 'right';
         ctx.fillText('J2000.0 · Parámetros dinámicos', baseWidth * 0.47, -baseHeight * 0.47 + 14);
         ctx.restore();
-      } catch (e) { /* hero canvas error no crítico */ }
+      } catch (e) { console.warn('Canvas error:', e); }
     }
     animationId = requestAnimationFrame(draw);
   })();
@@ -456,7 +623,7 @@
     const cv = document.getElementById('solar-canvas');
     if (!cv) return;
     const ctx = cv.getContext('2d');
-    const dpr = window.devicePixelRatio || 1;
+    if (!ctx) return;
     let animationId = null;
     let lastFrame = 0;
     let logicW = 0, logicH = 0;
@@ -473,14 +640,14 @@
     const sXmin = arrayMin(sXs), sXmax = arrayMax(sXs);
     const sYmin = arrayMin(sYs), sYmax = arrayMax(sYs);
     const sXr = sXmax - sXmin, sYr = sYmax - sYmin;
-    const X0 = sXmin - sXr * 0.18, X1 = sXmax + sXr * 0.18;
-    const Y0 = sYmin - sYr * 0.14, Y1 = sYmax + sYr * 0.14;
+    const X0 = sXmin - sXr * SOLAR_X_PADDING, X1 = sXmax + sXr * SOLAR_X_PADDING;
+    const Y0 = sYmin - sYr * SOLAR_Y_PADDING, Y1 = sYmax + sYr * SOLAR_Y_PADDING;
 
     const MONTHS = [['ENE', 0], ['FEB', 31], ['MAR', 59], ['ABR', 90], ['MAY', 120],
       ['JUN', 151], ['JUL', 181], ['AGO', 212], ['SEP', 243], ['OCT', 273], ['NOV', 304], ['DIC', 334]];
 
     // Refs DOM cacheadas (A6)
-    const ref = {
+    const refs = {
       spd:      document.getElementById('solar-spd'),
       spdLbl:   document.getElementById('solar-spd-lbl'),
       play:     document.getElementById('solar-play'),
@@ -491,23 +658,10 @@
       decl:     document.getElementById('sol-decl'),
       pct:      document.getElementById('sol-pct')
     };
-    let inView = false;
-
-    function updatePlayBtn(btn) {
-      if (!btn) return;
-      const done = solarState.day >= SOLAR_PTS.length - 1;
-      if (done) {
-        btn.textContent = 'Reanudar'; btn.className = ''; btn.classList.add('ended');
-      } else if (solarState.playing) {
-        btn.textContent = 'Pausar'; btn.className = 'on';
-      } else {
-        btn.textContent = 'Reanudar'; btn.className = '';
-      }
-    }
 
     function draw(ts) {
-      if (!inView) return;
-      animationId = requestAnimationFrame(draw);
+      if (!solarObs.inView) return;
+      solarObs.animationId = requestAnimationFrame(draw);
       if (ts - lastFrame < FRAME_TIME) return;
       lastFrame = ts;
       try {
@@ -515,29 +669,21 @@
         const xm = isMobile ? 36 : 56, ym = isMobile ? 32 : 42;
         const MX = v => xm + (v - X0) / (X1 - X0) * (W - 2 * xm);
         const MY = v => H - ym - (v - Y0) / (Y1 - Y0) * (H - 2 * ym);
-        ctx.clearRect(0, 0, W, H); ctx.fillStyle = CBG(); ctx.fillRect(0, 0, W, H);
+        ctx.clearRect(0, 0, W, H); ctx.fillStyle = colorBg(); ctx.fillRect(0, 0, W, H);
 
-        for (let i = 0; i <= 4; i++) {
-          ctx.strokeStyle = CGRID(); ctx.lineWidth = 0.5;
-          ctx.beginPath(); ctx.moveTo(MX(X0 + i * (X1 - X0) / 4), ym); ctx.lineTo(MX(X0 + i * (X1 - X0) / 4), H - ym); ctx.stroke();
-          ctx.beginPath(); ctx.moveTo(xm, MY(Y0 + i * (Y1 - Y0) / 4)); ctx.lineTo(W - xm, MY(Y0 + i * (Y1 - Y0) / 4)); ctx.stroke();
-        }
-        ctx.strokeStyle = CAXIS(); ctx.lineWidth = 0.5; ctx.setLineDash([3, 5]);
-        ctx.beginPath(); ctx.moveTo(MX(0), ym - 2); ctx.lineTo(MX(0), H - ym + 2); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(xm - 2, MY(0)); ctx.lineTo(W - xm + 2, MY(0)); ctx.stroke();
-        ctx.setLineDash([]);
+        drawGrid(ctx, MX, MY, X0, X1, Y0, Y1, W, H, xm, ym);
 
         ctx.beginPath();
         SOLAR_PTS.forEach((p, i) => i === 0 ? ctx.moveTo(MX(p.x), MY(p.y)) : ctx.lineTo(MX(p.x), MY(p.y)));
-        ctx.closePath(); ctx.strokeStyle = CBLUE(0.07); ctx.lineWidth = 1; ctx.stroke();
+        ctx.closePath(); ctx.strokeStyle = colorBlue(0.07); ctx.lineWidth = 1; ctx.stroke();
 
       if (solarState.playing && solarState.day < SOLAR_PTS.length - 1) {
-        const s = safeSpeed(ref.spd.value, 10);
-        solarState.day += s * 0.12;
+        const s = safeSpeed(refs.spd.value, 10);
+        solarState.day += s * SOLAR_DAY_FACTOR;
           if (solarState.day >= SOLAR_PTS.length - 1) {
             solarState.day = SOLAR_PTS.length - 1;
             solarState.playing = false;
-            updatePlayBtn(ref.play);
+            updatePlayBtn(refs.play, solarState.day >= SOLAR_PTS.length - 1, solarState.playing);
           }
         }
 
@@ -546,17 +692,17 @@
           ctx.beginPath();
           ctx.moveTo(MX(SOLAR_PTS[i - 1].x), MY(SOLAR_PTS[i - 1].y));
           ctx.lineTo(MX(SOLAR_PTS[i].x), MY(SOLAR_PTS[i].y));
-          ctx.strokeStyle = CBLUE(0.85); ctx.lineWidth = 1.7; ctx.stroke();
+          ctx.strokeStyle = colorBlue(0.85); ctx.lineWidth = 1.7; ctx.stroke();
         }
 
         const lblSize = isMobile ? '7px' : '9.5px';
         MONTHS.forEach(([n, d]) => {
-          const idx = Math.floor((d / 365.25) * SOLAR_PTS.length);
+          const idx = Math.floor((d / TROPICAL_YEAR) * SOLAR_PTS.length);
           if (idx > end) return;
           const p = SOLAR_PTS[idx];
           ctx.beginPath(); ctx.arc(MX(p.x), MY(p.y), 3.5, 0, TAU);
-          ctx.fillStyle = CMON(0.75); ctx.fill();
-          ctx.fillStyle = CMON(0.7);
+          ctx.fillStyle = colorMonth(0.75); ctx.fill();
+          ctx.fillStyle = colorMonth(0.7);
           ctx.font = `${lblSize} JetBrains Mono,monospace`;
           ctx.textAlign = 'center';
           ctx.fillText(n, MX(p.x), MY(p.y) - 8);
@@ -564,73 +710,49 @@
 
         if (end > 0) {
           const cp = SOLAR_PTS[end];
-          ctx.beginPath(); ctx.arc(MX(cp.x), MY(cp.y), 6, 0, TAU); ctx.fillStyle = CDOT(); ctx.fill();
+          ctx.beginPath(); ctx.arc(MX(cp.x), MY(cp.y), 6, 0, TAU); ctx.fillStyle = colorDot(); ctx.fill();
           ctx.strokeStyle = 'rgba(255,255,255,0.45)'; ctx.lineWidth = 1.2; ctx.stroke();
           ctx.beginPath(); ctx.arc(MX(cp.x), MY(cp.y), 11, 0, TAU);
-          ctx.strokeStyle = CWARM(0.16); ctx.lineWidth = 1.5; ctx.stroke();
-          if (ref.day)  ref.day.textContent  = Math.floor(cp.day + 1);
-          if (ref.eq)   ref.eq.textContent   = cp.em.toFixed(1) + ' min';
-          if (ref.decl) ref.decl.textContent = cp.dd.toFixed(2) + '°';
-          if (ref.pct)  ref.pct.textContent  = Math.round(100 * end / (SOLAR_PTS.length - 1)) + '%';
+          ctx.strokeStyle = colorWarm(0.16); ctx.lineWidth = 1.5; ctx.stroke();
+          if (refs.day)  refs.day.textContent  = Math.floor(cp.day + 1);
+          if (refs.eq)   refs.eq.textContent   = cp.em.toFixed(1) + ' min';
+          if (refs.decl) refs.decl.textContent = cp.dd.toFixed(2) + '°';
+          if (refs.pct)  refs.pct.textContent  = Math.round(100 * end / (SOLAR_PTS.length - 1)) + '%';
         }
 
-        ctx.fillStyle = CLBL();
+        ctx.fillStyle = colorLabel();
         ctx.font = `${lblSize} JetBrains Mono,monospace`;
         ctx.textAlign = 'center';
         ctx.fillText('← E   ECUACIÓN DEL TIEMPO E(t)   O →', W / 2, H - 5);
         ctx.save(); ctx.translate(13, H / 2); ctx.rotate(-Math.PI / 2);
         ctx.fillText('DECLINACIÓN δ', 0, 0); ctx.restore();
-        ctx.fillStyle = CTTL();
+        ctx.fillStyle = colorTitle();
         ctx.font = '500 10px JetBrains Mono,monospace';
         ctx.textAlign = 'left';
         ctx.fillText('ANALEMA SOLAR TERRESTRE · J2000.0', xm, isMobile ? 14 : 20);
-      } catch (e) { /* solar canvas error no crítico */ }
+      } catch (e) { console.warn('Canvas error:', e); }
     }
 
-    // Observer: pausa el trabajo pesado cuando el canvas sale del viewport (A5).
-    // Si prefersReducedMotion, no auto-iniciar la animación: mostrar la curva completa.
     const solarSection = document.getElementById('solar');
-    const solarObs = new IntersectionObserver(entries => {
-      entries.forEach(entry => {
-        inView = entry.isIntersecting;
-        if (inView) {
-          if (!solarState.started) {
-            solarState.started = true;
-            if (prefersReducedMotion) {
-              solarState.day = SOLAR_PTS.length - 1;
-              solarState.playing = false;
-              updatePlayBtn(ref.play);
-            } else {
-              solarState.playing = true;
-              if (ref.play) { ref.play.textContent = 'Pausar'; ref.play.className = 'on'; }
-            }
-          }
-          animationId = requestAnimationFrame(draw);
+    const solarObs = createSectionObserver(solarSection, solarState, {
+      onStart: () => {
+        if (prefersReducedMotion) {
+          solarState.day = SOLAR_PTS.length - 1;
+          solarState.playing = false;
+          updatePlayBtn(refs.play, true, false);
+        } else {
+          solarState.playing = true;
+          if (refs.play) { refs.play.textContent = 'Pausar'; refs.play.className = 'on'; }
         }
-      });
-    }, { threshold: 0.25 });
-    if (solarSection) solarObs.observe(solarSection);
-
-    if (ref.spd) ref.spd.addEventListener('input', function () {
-      if (ref.spdLbl) ref.spdLbl.textContent = this.value + '×';
+      },
+      drawFn: draw
     });
 
-    if (ref.play) ref.play.addEventListener('click', () => {
-      if (!solarState.started) { solarState.started = true; animationId = requestAnimationFrame(draw); }
-      solarState.playing = !solarState.playing;
-      updatePlayBtn(ref.play);
-    });
-
-    if (ref.reset) ref.reset.addEventListener('click', () => {
-      solarState.day = 0; solarState.playing = true;
-      if (!solarState.started) { solarState.started = true; animationId = requestAnimationFrame(draw); }
-      updatePlayBtn(ref.play);
-    });
-
-    if (ref.complete) ref.complete.addEventListener('click', () => {
-      solarState.day = SOLAR_PTS.length - 1; solarState.playing = false;
-      if (!solarState.started) { solarState.started = true; animationId = requestAnimationFrame(draw); }
-      updatePlayBtn(ref.play);
+    bindControlEvents(refs, solarState, () => requestAnimationFrame(draw), {
+      totalDays: SOLAR_PTS.length - 1,
+      defaultSpeed: 10,
+      speedIncrement: SOLAR_DAY_FACTOR,
+      updateBtn: () => updatePlayBtn(refs.play, solarState.day >= SOLAR_PTS.length - 1, solarState.playing)
     });
   })();
 
@@ -657,6 +779,7 @@
 
   let selectedPlanet = planetsData[2]; // Marte por defecto
   const planetState = { day: 0, playing: false, started: false };
+  const venusState = { day: 0, playing: false, started: false };
   const planetCache = new Map();
 
   function getPlanetPoints(p) {
@@ -687,13 +810,14 @@
       const r = Math.hypot(dx, dy, dz);
 
       // Longitud y latitud eclíptica geocéntrica
-      const lon = Math.atan2(dy, dx);
+      const nut = nutationState(d);
+      const lon = Math.atan2(dy, dx) + nut.dpsi;   // longitud aparente (nutación Δψ)
       const beta = Math.asin(Math.max(-1, Math.min(1, dz / r)));
 
       // Transformación a ecuatorial J2000: (lon, beta) -> (ra, dec)
       // rotación alrededor del eje x por -ε.  Fórmula libre de división por cosβ
-      // (Meeus 1998, cap. 12):  α = atan2(cosβ·sinλ·cosε − sinβ·sinε, cosβ·cosλ)
-      const sinEps = Math.sin(EPS0), cosEps = Math.cos(EPS0);
+      // (Meeus 1998, cap. 12). Usa oblicuidad VERDADERA (media + Δε).
+      const sinEps = Math.sin(nut.epsTrue), cosEps = Math.cos(nut.epsTrue);
       const sinLon = Math.sin(lon), cosLon = Math.cos(lon);
       const sinBeta = Math.sin(beta), cosBeta = Math.cos(beta);
       const cosBetaLon = cosBeta * cosLon;
@@ -702,7 +826,7 @@
       const dec = Math.asin(Math.max(-1, Math.min(1, sinBeta * cosEps + cosBeta * sinEps * sinLon)));
 
       // AR del Sol (Tierra en z≈0, beta=0)
-      const sunLon = Math.atan2(-pe.y, -pe.x);
+      const sunLon = Math.atan2(-pe.y, -pe.x) + nut.dpsi;
       const sunRA = Math.atan2(Math.sin(sunLon) * cosEps, Math.cos(sunLon));
 
       // Diferencia en AR (eje horizontal del analema planetario)
@@ -790,7 +914,7 @@
     const cv = document.getElementById('planet-canvas');
     if (!cv) return;
     const ctx = cv.getContext('2d');
-    const dpr = window.devicePixelRatio || 1;
+    if (!ctx) return;
     let animationId = null;
     let lastFrame = 0;
     let logicW = 0, logicH = 0;
@@ -803,7 +927,7 @@
     }, { useContainer: true, aspectRatio: 620/480, maxWidth: 620, debounceMs: 100 });
 
     // Refs DOM cacheadas (A6)
-    const ref = {
+    const refs = {
       spd:      document.getElementById('pl-spd'),
       spdLbl:   document.getElementById('pl-spd-lbl'),
       play:     document.getElementById('pl-play'),
@@ -814,31 +938,21 @@
       pct:      document.getElementById('pl-pct'),
       retro:    document.getElementById('pl-retro')
     };
-    let inView = false;
-
-    function updatePlayBtn(btn, result) {
-      if (!btn) return;
-      const pts = result?.pts || result;
-      const done = planetState.day >= (pts ? pts.length - 1 : 0);
-      if (done) { btn.textContent = 'Reanudar'; btn.className = ''; btn.classList.add('ended'); }
-      else if (planetState.playing) { btn.textContent = 'Pausar'; btn.className = 'on'; }
-      else { btn.textContent = 'Reanudar'; btn.className = ''; }
-    }
 
     function draw(ts) {
-      if (!inView) return;
-      animationId = requestAnimationFrame(draw);
+      if (!planetObs.inView) return;
+      planetObs.animationId = requestAnimationFrame(draw);
       if (ts - lastFrame < FRAME_TIME) return;
       lastFrame = ts;
       try {
         const p = selectedPlanet;
         const { pts, bounds } = getPlanetPoints(p);
         const W = logicW, H = logicH;
-        ctx.clearRect(0, 0, W, H); ctx.fillStyle = CBG(); ctx.fillRect(0, 0, W, H);
+        ctx.clearRect(0, 0, W, H); ctx.fillStyle = colorBg(); ctx.fillRect(0, 0, W, H);
 
         const { minX, maxX, minY, maxY } = bounds;
         const xr = maxX - minX, yr = maxY - minY;
-        const xpad = Math.max(xr * 0.15, 0.001), ypad = Math.max(yr * 0.15, 0.001);
+        const xpad = Math.max(xr * PLANET_PADDING, 0.001), ypad = Math.max(yr * PLANET_PADDING, 0.001);
         const X0 = minX - xpad, X1 = maxX + xpad;
         const Y0 = minY - ypad, Y1 = maxY + ypad;
 
@@ -846,27 +960,19 @@
         const MX = v => xm + (v - X0) / (X1 - X0) * (W - 2 * xm);
         const MY = v => H - ym - (v - Y0) / (Y1 - Y0) * (H - 2 * ym);
 
-        for (let i = 0; i <= 4; i++) {
-          ctx.strokeStyle = CGRID(); ctx.lineWidth = 0.4;
-          ctx.beginPath(); ctx.moveTo(MX(X0 + i * (X1 - X0) / 4), ym); ctx.lineTo(MX(X0 + i * (X1 - X0) / 4), H - ym); ctx.stroke();
-          ctx.beginPath(); ctx.moveTo(xm, MY(Y0 + i * (Y1 - Y0) / 4)); ctx.lineTo(W - xm, MY(Y0 + i * (Y1 - Y0) / 4)); ctx.stroke();
-        }
-        ctx.strokeStyle = CAXIS(); ctx.lineWidth = 0.5; ctx.setLineDash([3, 5]);
-        ctx.beginPath(); ctx.moveTo(MX((X0 + X1) / 2), ym); ctx.lineTo(MX((X0 + X1) / 2), H - ym); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(xm, MY((Y0 + Y1) / 2)); ctx.lineTo(W - xm, MY((Y0 + Y1) / 2)); ctx.stroke();
-        ctx.setLineDash([]);
+        drawGrid(ctx, MX, MY, X0, X1, Y0, Y1, W, H, xm, ym);
 
         ctx.beginPath();
         pts.forEach((q, i) => i === 0 ? ctx.moveTo(MX(q.x), MY(q.y)) : ctx.lineTo(MX(q.x), MY(q.y)));
         ctx.strokeStyle = p.color + '18'; ctx.lineWidth = 1; ctx.stroke();
 
       if (planetState.playing && planetState.day < pts.length - 1) {
-        const s = safeSpeed(ref.spd.value, 25);
-        planetState.day += s * 0.11;
+        const s = safeSpeed(refs.spd.value, 25);
+        planetState.day += s * PLANET_DAY_FACTOR;
           if (planetState.day >= pts.length - 1) {
             planetState.day = pts.length - 1;
             planetState.playing = false;
-            updatePlayBtn(ref.play, pts);
+            updatePlayBtn(refs.play, planetState.day >= pts.length - 1, planetState.playing);
           }
         }
 
@@ -875,7 +981,7 @@
           ctx.beginPath();
           ctx.moveTo(MX(pts[i - 1].x), MY(pts[i - 1].y));
           ctx.lineTo(MX(pts[i].x), MY(pts[i].y));
-          ctx.strokeStyle = pts[i].retro ? CRETRO(0.85) : CBLUE(0.85);
+          ctx.strokeStyle = pts[i].retro ? colorRetro(0.85) : colorBlue(0.85);
           ctx.lineWidth = 1.7; ctx.stroke();
         }
 
@@ -885,70 +991,50 @@
           ctx.strokeStyle = 'rgba(255,255,255,0.45)'; ctx.lineWidth = 1.2; ctx.stroke();
           ctx.beginPath(); ctx.arc(MX(cp.x), MY(cp.y), 10, 0, TAU);
           ctx.strokeStyle = p.color + '28'; ctx.lineWidth = 1.5; ctx.stroke();
-          if (ref.day)   ref.day.textContent   = Math.round(cp.day).toLocaleString('es-ES');
-          if (ref.elong) ref.elong.textContent = cp.elong.toFixed(1) + '°';
-          if (ref.pct)   ref.pct.textContent   = Math.round(100 * end / (pts.length - 1)) + '%';
-          if (ref.retro) { ref.retro.textContent = cp.retro ? 'Sí' : 'No'; ref.retro.style.color = cp.retro ? '#e05555' : ''; }
+          if (refs.day)   refs.day.textContent   = Math.round(cp.day).toLocaleString('es-ES');
+          if (refs.elong) refs.elong.textContent = cp.elong.toFixed(1) + '°';
+          if (refs.pct)   refs.pct.textContent   = Math.round(100 * end / (pts.length - 1)) + '%';
+          if (refs.retro) { refs.retro.textContent = cp.retro ? 'Sí' : 'No'; refs.retro.style.color = cp.retro ? '#e05555' : ''; }
         }
 
         const lblSize = isMobile ? '7px' : '10px';
-        ctx.fillStyle = CLBL();
+        ctx.fillStyle = colorLabel();
         ctx.font = `${lblSize} JetBrains Mono,monospace`;
         ctx.textAlign = 'center';
         ctx.fillText('← O   ASCENSIÓN RECTA   E →', W / 2, H - 5);
         ctx.save(); ctx.translate(13, H / 2); ctx.rotate(-Math.PI / 2);
         ctx.fillText('DECLINACIÓN δ', 0, 0); ctx.restore();
-        ctx.fillStyle = CTTL();
+        ctx.fillStyle = colorTitle();
         ctx.font = `500 ${lblSize} JetBrains Mono,monospace`;
         ctx.textAlign = 'left';
         ctx.fillText(`ANALEMA DE ${p.name.toUpperCase()} · GEOCÉNTRICO`, xm, isMobile ? 14 : 19);
-      } catch (e) { /* planetas canvas error no crítico */ }
+      } catch (e) { console.warn('Canvas error:', e); }
     }
 
     const planetSection = document.getElementById('planetas');
-    const planetObs = new IntersectionObserver(entries => {
-      entries.forEach(entry => {
-        inView = entry.isIntersecting;
-        if (inView) {
-          if (!planetState.started) {
-            planetState.started = true;
-            if (prefersReducedMotion) {
-              const { pts } = getPlanetPoints(selectedPlanet);
-              planetState.day = pts.length - 1;
-              planetState.playing = false;
-              updatePlayBtn(ref.play, pts);
-            } else {
-              planetState.playing = true;
-              if (ref.play) { ref.play.textContent = 'Pausar'; ref.play.className = 'on'; }
-            }
-          }
-          animationId = requestAnimationFrame(draw);
+    const planetObs = createSectionObserver(planetSection, planetState, {
+      onStart: () => {
+        if (prefersReducedMotion) {
+          const { pts } = getPlanetPoints(selectedPlanet);
+          planetState.day = pts.length - 1;
+          planetState.playing = false;
+          updatePlayBtn(refs.play, planetState.day >= pts.length - 1, planetState.playing);
+        } else {
+          planetState.playing = true;
+          if (refs.play) { refs.play.textContent = 'Pausar'; refs.play.className = 'on'; }
         }
-      });
-    }, { threshold: 0.25 });
-    if (planetSection) planetObs.observe(planetSection);
-
-    if (ref.spd) ref.spd.addEventListener('input', function () {
-      if (ref.spdLbl) ref.spdLbl.textContent = this.value + '×';
+      },
+      drawFn: draw
     });
 
-    if (ref.play) ref.play.addEventListener('click', () => {
-      if (!planetState.started) { planetState.started = true; animationId = requestAnimationFrame(draw); }
-      planetState.playing = !planetState.playing;
-      updatePlayBtn(ref.play, getPlanetPoints(selectedPlanet));
-    });
-
-    if (ref.reset) ref.reset.addEventListener('click', () => {
-      planetState.day = 0; planetState.playing = true;
-      if (!planetState.started) { planetState.started = true; animationId = requestAnimationFrame(draw); }
-      updatePlayBtn(ref.play, getPlanetPoints(selectedPlanet));
-    });
-
-    if (ref.complete) ref.complete.addEventListener('click', () => {
-      const { pts } = getPlanetPoints(selectedPlanet);
-      planetState.day = pts.length - 1; planetState.playing = false;
-      if (!planetState.started) { planetState.started = true; animationId = requestAnimationFrame(draw); }
-      updatePlayBtn(ref.play, pts);
+    bindControlEvents(refs, planetState, () => requestAnimationFrame(draw), {
+      totalDays: getPlanetPoints(selectedPlanet).pts.length - 1,
+      defaultSpeed: 10,
+      speedIncrement: PLANET_DAY_FACTOR,
+      updateBtn: () => {
+        const { pts } = getPlanetPoints(selectedPlanet);
+        updatePlayBtn(refs.play, planetState.day >= pts.length - 1, planetState.playing);
+      }
     });
   })();
 
@@ -959,12 +1045,11 @@
     const cv = document.getElementById('venus-canvas');
     if (!cv) return;
     const ctx = cv.getContext('2d');
-    const dpr = window.devicePixelRatio || 1;
+    if (!ctx) return;
     let animationId = null;
     let lastFrame = 0;
     let logicW = 0, logicH = 0;
-    const TOTAL_DAYS = Math.round(8 * 365.25); // 2922 días
-    const venusState = { day: 0, playing: false, started: false };
+    const TOTAL_DAYS = Math.round(8 * TROPICAL_YEAR); // 2922 días
 
     // Usar utilidad unificada de resize
     setupCanvasResize(cv, (w, h, dpr) => {
@@ -997,7 +1082,7 @@
         const pe = orbPosInc(earthEl, d);
         const pv = orbPosInc(V, d);
         const dx = pv.x - pe.x, dy = pv.y - pe.y, dz = pv.z; // Tierra en z ≈ 0
-        const lon = Math.atan2(dy, dx); // longitud eclíptica geocéntrica de Venus
+        const lon = Math.atan2(dy, dx) + nutationState(d).dpsi; // longitud aparente (Δψ)
         const sunX = -pe.x, sunY = -pe.y;
         const dot = sunX * dx + sunY * dy;
         const sunDist = Math.hypot(sunX, sunY);      // distancia Tierra–Sol
@@ -1034,7 +1119,7 @@
     precompute();
 
     // Refs DOM cacheadas (A6)
-    const ref = {
+    const refs = {
       spd:      document.getElementById('ven-spd'),
       spdLbl:   document.getElementById('ven-spd-lbl'),
       play:     document.getElementById('ven-play'),
@@ -1045,7 +1130,6 @@
       elong:    document.getElementById('ven-elong'),
       cyc:      document.getElementById('ven-cyc')
     };
-    let inView = false;
 
     // Convierte un punto (lon, elong) a coordenadas canvas polares
     // Radio = elongación normalizada; ángulo = longitud eclíptica geocéntrica
@@ -1057,43 +1141,35 @@
       };
     }
 
-    function updatePlayBtn(btn) {
-      if (!btn) return;
-      const done = venusState.day >= TOTAL_DAYS;
-      if (done) { btn.textContent = 'Reanudar'; btn.className = ''; btn.classList.add('ended'); }
-      else if (venusState.playing) { btn.textContent = 'Pausar'; btn.className = 'on'; }
-      else { btn.textContent = 'Reanudar'; btn.className = ''; }
-    }
-
     function draw(ts) {
-      if (!inView) return;
-      animationId = requestAnimationFrame(draw);
+      if (!venusObs.inView) return;
+      venusObs.animationId = requestAnimationFrame(draw);
       if (ts - lastFrame < FRAME_TIME) return;
       lastFrame = ts;
       try {
         const W = logicW, H = logicH;
         const cx = W / 2, cy = H / 2;
-        const R = Math.min(W, H) * 0.42;
-        const MAX_ELONG = 48;
+        const R = Math.min(W, H) * VENUS_RADIUS_RATIO;
+        
 
         ctx.clearRect(0, 0, W, H);
-        ctx.fillStyle = CBG(); ctx.fillRect(0, 0, W, H);
+        ctx.fillStyle = colorBg(); ctx.fillRect(0, 0, W, H);
 
         if (venusState.playing && venusState.day < TOTAL_DAYS) {
-          const spd = safeSpeed(ref.spd?.value, 30);
-          venusState.day = Math.min(venusState.day + spd * 0.15, TOTAL_DAYS);
+          const spd = safeSpeed(refs.spd?.value, 30);
+          venusState.day = Math.min(venusState.day + spd * VENUS_DAY_FACTOR, TOTAL_DAYS);
           if (venusState.day >= TOTAL_DAYS) {
             venusState.playing = false;
-            updatePlayBtn(ref.play);
+            updatePlayBtn(refs.play, venusState.day >= TOTAL_DAYS, venusState.playing);
           }
         }
         const endDay = Math.min(Math.round(venusState.day), TOTAL_DAYS);
 
         [12, 24, 36, 47].forEach(deg => {
-          const r = (deg / MAX_ELONG) * R;
+          const r = (deg / VENUS_MAX_ELONG) * R;
           ctx.beginPath(); ctx.arc(cx, cy, r, 0, TAU);
-          ctx.strokeStyle = CGRID(); ctx.lineWidth = 0.5; ctx.stroke();
-          ctx.fillStyle = CLBL();
+          ctx.strokeStyle = colorGrid(); ctx.lineWidth = 0.5; ctx.stroke();
+          ctx.fillStyle = colorLabel();
           ctx.font = `${isMobile ? '6px' : '7px'} JetBrains Mono,monospace`;
           ctx.textAlign = 'left';
           ctx.fillText(`${deg}°`, cx + r + 3, cy + 3);
@@ -1104,7 +1180,7 @@
           ctx.beginPath();
           ctx.moveTo(cx + Math.cos(angle) * R * 0.97, cy + Math.sin(angle) * R * 0.97);
           ctx.lineTo(cx + Math.cos(angle) * R, cy + Math.sin(angle) * R);
-          ctx.strokeStyle = CGRID(); ctx.lineWidth = 0.5; ctx.stroke();
+          ctx.strokeStyle = colorGrid(); ctx.lineWidth = 0.5; ctx.stroke();
         }
 
         ctx.beginPath(); ctx.arc(cx, cy, 7, 0, TAU); ctx.fillStyle = 'rgba(240,192,64,0.15)'; ctx.fill();
@@ -1112,11 +1188,11 @@
 
         const RZ = R * 1.06;
         ctx.beginPath(); ctx.arc(cx, cy, RZ, 0, TAU);
-        ctx.strokeStyle = CAXIS(); ctx.lineWidth = 0.6; ctx.stroke();
+        ctx.strokeStyle = colorAxis(); ctx.lineWidth = 0.6; ctx.stroke();
         ctx.beginPath();
         ctx.moveTo(cx, cy - RZ + 4); ctx.lineTo(cx, cy - RZ - 4);
-        ctx.strokeStyle = CAXIS(); ctx.lineWidth = 1; ctx.stroke();
-        ctx.fillStyle = CLBL();
+        ctx.strokeStyle = colorAxis(); ctx.lineWidth = 1; ctx.stroke();
+        ctx.fillStyle = colorLabel();
         ctx.font = `${isMobile ? '6px' : '7px'} JetBrains Mono,monospace`;
         ctx.textAlign = 'center';
         ctx.fillText('λ = 0°', cx + 22, cy - RZ + 13);
@@ -1130,12 +1206,12 @@
         let prevPt = null;
         for (let i = 0; i <= maxIdx; i += step) {
           const q = vPts[i];
-          const p = toCanvas(q.lon, q.elong, cx, cy, R, MAX_ELONG);
+          const p = toCanvas(q.lon, q.elong, cx, cy, R, VENUS_MAX_ELONG);
           if (prevPt) {
             ctx.beginPath();
             ctx.moveTo(prevPt.px, prevPt.py);
             ctx.lineTo(p.px, p.py);
-            ctx.strokeStyle = q.isEast ? CWARM(0.32) : CBLUE(0.26);
+            ctx.strokeStyle = q.isEast ? colorWarm(0.32) : colorBlue(0.26);
             ctx.lineWidth = 1;
             ctx.stroke();
           }
@@ -1148,7 +1224,7 @@
           ctx.beginPath();
           ctx.moveTo(zx(starConjs[i - 1]), zy(starConjs[i - 1]));
           ctx.lineTo(zx(starConjs[i]), zy(starConjs[i]));
-          ctx.strokeStyle = CWARM(0.6); ctx.lineWidth = 1.5; ctx.stroke();
+          ctx.strokeStyle = colorWarm(0.6); ctx.lineWidth = 1.5; ctx.stroke();
         }
 
         if (endDay >= TOTAL_DAYS && infConjs.length >= 6 && starConjs.length === 5) {
@@ -1156,13 +1232,13 @@
           ctx.beginPath();
           ctx.moveTo(zx(starConjs[4]), zy(starConjs[4]));
           ctx.lineTo(zx(c6), zy(c6));
-          ctx.strokeStyle = CWARM(0.6); ctx.lineWidth = 1.5; ctx.stroke();
+          ctx.strokeStyle = colorWarm(0.6); ctx.lineWidth = 1.5; ctx.stroke();
           ctx.beginPath(); ctx.arc(zx(c6), zy(c6), 4.5, 0, TAU);
-          ctx.strokeStyle = CRETRO(0.9); ctx.lineWidth = 1.4; ctx.stroke();
+          ctx.strokeStyle = colorRetro(0.9); ctx.lineWidth = 1.4; ctx.stroke();
           let drift = (c6.lon - c1.lon) * 180 / Math.PI;
           while (drift > 180) drift -= 360;
           while (drift < -180) drift += 360;
-          ctx.fillStyle = CRETRO(0.9);
+          ctx.fillStyle = colorRetro(0.9);
           ctx.font = `${isMobile ? '6px' : '8px'} JetBrains Mono,monospace`;
           ctx.textAlign = zx(c6) > cx ? 'right' : 'left';
           ctx.fillText(`6.ª conj.: Δλ ≈ ${drift.toFixed(1)}° — no cierra`,
@@ -1173,87 +1249,63 @@
           ctx.beginPath(); ctx.arc(zx(q), zy(q), 5, 0, TAU);
           ctx.fillStyle = '#e8a030'; ctx.fill();
           ctx.strokeStyle = 'rgba(255,255,255,0.35)'; ctx.lineWidth = 1; ctx.stroke();
-          const p = toCanvas(q.lon, q.elong, cx, cy, R, MAX_ELONG);
+          const p = toCanvas(q.lon, q.elong, cx, cy, R, VENUS_MAX_ELONG);
           ctx.setLineDash([2, 4]);
           ctx.beginPath(); ctx.moveTo(zx(q), zy(q)); ctx.lineTo(p.px, p.py);
-          ctx.strokeStyle = CWARM(0.18); ctx.lineWidth = 0.7; ctx.stroke();
+          ctx.strokeStyle = colorWarm(0.18); ctx.lineWidth = 0.7; ctx.stroke();
           ctx.setLineDash([]);
         });
 
         const visMaxElongs = maxElongs.filter(q => q.day <= endDay);
         visMaxElongs.forEach(q => {
-          const { px, py } = toCanvas(q.lon, q.elong, cx, cy, R, MAX_ELONG);
+          const { px, py } = toCanvas(q.lon, q.elong, cx, cy, R, VENUS_MAX_ELONG);
           ctx.beginPath(); ctx.arc(px, py, 3.5, 0, TAU);
-          ctx.fillStyle = q.isEast ? CWARM(0.85) : CBLUE(0.7); ctx.fill();
+          ctx.fillStyle = q.isEast ? colorWarm(0.85) : colorBlue(0.7); ctx.fill();
         });
 
         if (endDay > 0) {
           const cpIdx = Math.min(Math.round(endDay * 2), vPts.length - 1);
           const cp = vPts[cpIdx];
-          const { px, py } = toCanvas(cp.lon, cp.elong, cx, cy, R, MAX_ELONG);
-          ctx.beginPath(); ctx.arc(px, py, 10, 0, TAU); ctx.fillStyle = CWARM(0.12); ctx.fill();
-          ctx.beginPath(); ctx.arc(px, py, 5, 0, TAU); ctx.fillStyle = CDOT(); ctx.fill();
+          const { px, py } = toCanvas(cp.lon, cp.elong, cx, cy, R, VENUS_MAX_ELONG);
+          ctx.beginPath(); ctx.arc(px, py, 10, 0, TAU); ctx.fillStyle = colorWarm(0.12); ctx.fill();
+          ctx.beginPath(); ctx.arc(px, py, 5, 0, TAU); ctx.fillStyle = colorDot(); ctx.fill();
           ctx.strokeStyle = 'rgba(255,255,255,0.4)'; ctx.lineWidth = 1.2; ctx.stroke();
 
-          if (ref.day)   ref.day.textContent   = Math.round(endDay);
-          if (ref.yr)    ref.yr.textContent    = (endDay / 365.25).toFixed(2);
-          if (ref.elong) ref.elong.textContent = cp.elong.toFixed(1) + '°';
-          if (ref.cyc)   ref.cyc.textContent   = Math.round(100 * endDay / TOTAL_DAYS) + '%';
+          if (refs.day)   refs.day.textContent   = Math.round(endDay);
+          if (refs.yr)    refs.yr.textContent    = (endDay / TROPICAL_YEAR).toFixed(2);
+          if (refs.elong) refs.elong.textContent = cp.elong.toFixed(1) + '°';
+          if (refs.cyc)   refs.cyc.textContent   = Math.round(100 * endDay / TOTAL_DAYS) + '%';
         }
 
-        ctx.fillStyle = CTTL();
+        ctx.fillStyle = colorTitle();
         ctx.font = `500 ${isMobile ? '7px' : '10px'} JetBrains Mono,monospace`;
         ctx.textAlign = 'left';
         ctx.fillText(isMobile ? 'PENTAGRAMA DE VENUS · 8 AÑOS'
           : 'PENTAGRAMA DE VENUS · 8 AÑOS · MODELO 3D (i = 3.39°)', isMobile ? 8 : 14, isMobile ? 14 : 19);
-      } catch (e) { /* venus canvas error no crítico */ }
+      } catch (e) { console.warn('Canvas error:', e); }
     }
 
-    // Controles
-    if (ref.spd) ref.spd.addEventListener('input', function () {
-      if (ref.spdLbl) ref.spdLbl.textContent = this.value + '×';
-    });
-
-    if (ref.play) ref.play.addEventListener('click', () => {
-      if (!venusState.started) { venusState.started = true; animationId = requestAnimationFrame(draw); }
-      venusState.playing = !venusState.playing;
-      updatePlayBtn(ref.play);
-    });
-
-    if (ref.reset) ref.reset.addEventListener('click', () => {
-      venusState.day = 0; venusState.playing = true;
-      if (!venusState.started) { venusState.started = true; animationId = requestAnimationFrame(draw); }
-      updatePlayBtn(ref.play);
-    });
-
-    if (ref.complete) ref.complete.addEventListener('click', () => {
-      venusState.day = TOTAL_DAYS; venusState.playing = false;
-      if (!venusState.started) { venusState.started = true; animationId = requestAnimationFrame(draw); }
-      updatePlayBtn(ref.play);
-    });
-
-    // Lazy start + pausa fuera del viewport + reduced motion
     const venusSection = document.getElementById('venus');
-    const venusObs = new IntersectionObserver(entries => {
-      entries.forEach(entry => {
-        inView = entry.isIntersecting;
-        if (inView) {
-          if (!venusState.started) {
-            venusState.started = true;
-            if (prefersReducedMotion) {
-              venusState.day = TOTAL_DAYS;
-              venusState.playing = false;
-              updatePlayBtn(ref.play);
-            } else {
-              venusState.playing = true;
-              if (ref.play) { ref.play.textContent = 'Pausar'; ref.play.className = 'on'; }
-            }
-          }
-          animationId = requestAnimationFrame(draw);
+    const venusObs = createSectionObserver(venusSection, venusState, {
+      onStart: () => {
+        if (prefersReducedMotion) {
+          venusState.day = TOTAL_DAYS;
+          venusState.playing = false;
+          updatePlayBtn(refs.play, true, false);
+        } else {
+          venusState.playing = true;
+          if (refs.play) { refs.play.textContent = 'Pausar'; refs.play.className = 'on'; }
         }
-      });
-    }, { threshold: 0.25 });
-    if (venusSection) venusObs.observe(venusSection);
+      },
+      drawFn: draw
+    });
+
+    bindControlEvents(refs, venusState, () => requestAnimationFrame(draw), {
+      totalDays: TOTAL_DAYS,
+      defaultSpeed: 10,
+      speedIncrement: VENUS_DAY_FACTOR,
+      updateBtn: () => updatePlayBtn(refs.play, venusState.day >= TOTAL_DAYS, venusState.playing)
+    });
   })();
 
   // =========================================================================
