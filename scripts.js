@@ -343,6 +343,7 @@
     if (done) { btn.textContent = 'Completado'; btn.className = ''; btn.classList.add('ended'); }
     else if (playing) { btn.textContent = 'Pausar'; btn.className = 'on'; }
     else { btn.textContent = 'Reanudar'; btn.className = ''; }
+    btn.setAttribute('aria-pressed', String(!!playing));
   }
 
   // Crea un IntersectionObserver que gestiona lazy-start, pausa y prefersReducedMotion
@@ -381,6 +382,27 @@
     ctx.beginPath(); ctx.moveTo(MX((X0 + X1) / 2), ym); ctx.lineTo(MX((X0 + X1) / 2), H - ym); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(xm, MY((Y0 + Y1) / 2)); ctx.lineTo(W - xm, MY((Y0 + Y1) / 2)); ctx.stroke();
     ctx.setLineDash([]);
+  }
+
+  // Dibuja la estela (trail) del analema hasta endIdx agrupando en una sola
+  // ruta los segmentos consecutivos del MISMO color (evita miles de
+  // beginPath/stroke por frame en Solar y Planeta).
+  //   proj(p)      -> [x, y] en coords de canvas
+  //   strokeFor(i) -> color CSS del segmento i (permite, p.ej., retrógrado)
+  function drawTrail(ctx, pts, endIdx, proj, strokeFor, lineWidth) {
+    if (!pts || endIdx < 1) return;
+    ctx.lineWidth = lineWidth;
+    let cur = strokeFor(1);
+    ctx.strokeStyle = cur;
+    ctx.beginPath();
+    for (let i = 1; i <= endIdx; i++) {
+      const c = strokeFor(i);
+      if (c !== cur) { ctx.stroke(); ctx.beginPath(); ctx.strokeStyle = c; cur = c; }
+      const [x1, y1] = proj(pts[i - 1]);
+      const [x2, y2] = proj(pts[i]);
+      ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+    }
+    ctx.stroke();
   }
 
   // Vincula controles play/reset/complete/velocity a un estado y draw function
@@ -605,15 +627,7 @@
         ctx.strokeStyle = colorBlue(0.25); ctx.lineWidth = 1.2; ctx.stroke();
 
         const endIdx = Math.min(Math.floor(currentPoint), currentPoints.length - 1);
-        if (endIdx >= 1) {
-          ctx.beginPath();
-          ctx.strokeStyle = colorWarm(0.8); ctx.lineWidth = 1.5;
-          for (let i = 1; i <= endIdx; i++) {
-            const p1 = currentPoints[i - 1], p2 = currentPoints[i];
-            ctx.moveTo(px(p1), py(p1)); ctx.lineTo(px(p2), py(p2));
-          }
-          ctx.stroke();
-        }
+        drawTrail(ctx, currentPoints, endIdx, p => [px(p), py(p)], () => colorWarm(0.8), 1.5);
 
         events.forEach(ev => {
           const idx = Math.floor((ev.day / EARTH_T) * currentPoints.length);
@@ -722,12 +736,7 @@
         }
 
         const end = Math.min(Math.round(solarState.day), SOLAR_PTS.length - 1);
-        for (let i = 1; i <= end; i++) {
-          ctx.beginPath();
-          ctx.moveTo(MX(SOLAR_PTS[i - 1].x), MY(SOLAR_PTS[i - 1].y));
-          ctx.lineTo(MX(SOLAR_PTS[i].x), MY(SOLAR_PTS[i].y));
-          ctx.strokeStyle = colorBlue(0.85); ctx.lineWidth = 1.7; ctx.stroke();
-        }
+        drawTrail(ctx, SOLAR_PTS, end, p => [MX(p.x), MY(p.y)], () => colorBlue(0.85), 1.7);
 
         const lblSize = isMobile ? '7px' : '9.5px';
         MONTHS.forEach(([n, d]) => {
@@ -1008,13 +1017,7 @@
         }
 
         const end = Math.min(Math.round(planetState.day), pts.length - 1);
-        for (let i = 1; i <= end; i++) {
-          ctx.beginPath();
-          ctx.moveTo(MX(pts[i - 1].x), MY(pts[i - 1].y));
-          ctx.lineTo(MX(pts[i].x), MY(pts[i].y));
-          ctx.strokeStyle = pts[i].retro ? colorRetro(0.85) : colorBlue(0.85);
-          ctx.lineWidth = 1.7; ctx.stroke();
-        }
+        drawTrail(ctx, pts, end, p => [MX(p.x), MY(p.y)], i => pts[i].retro ? colorRetro(0.85) : colorBlue(0.85), 1.7);
 
         if (end > 0) {
           const cp = pts[end];
