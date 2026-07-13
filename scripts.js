@@ -585,9 +585,15 @@
     ];
 
     let heroInView = true;
+    let heroWasInView = false;
     const heroObs = new IntersectionObserver(es => {
-      heroInView = es[0].isIntersecting;
-      if (heroInView) {
+      const nowVisible = es[0].isIntersecting;
+      const entering = nowVisible && !heroWasInView;
+      heroWasInView = nowVisible;
+      heroInView = nowVisible;
+      // Solo arranca el loop en la transición de entrada: draw() ya se
+      // auto-agenda su propio rAF, así que re-entrar no debe duplicar loops.
+      if (entering) {
         heroState.playing = true;
         requestAnimationFrame(draw);
       }
@@ -595,14 +601,14 @@
     heroObs.observe(cv);
 
     function draw(ts) {
-      if (!heroInView || !heroState.playing) return;
+      if (!heroInView) return;
       requestAnimationFrame(draw);
+      if (!heroState.playing || document.hidden) return;
       if (baseWidth === 0 || baseHeight === 0) return;
       if (ts - lastTimestamp < FRAME_TIME) return;
       lastTimestamp = ts;
       if (currentPoints.length === 0) return;
       try {
-        if (document.hidden) { heroState.playing = false; return; }
         if (!prefersReducedMotion) {
           animProgress += HERO_ANIM_SPEED;
           if (animProgress > 1) animProgress = 0;
@@ -1346,6 +1352,9 @@
       if (solarState.started)  solarState.playing  = false;
       if (planetState.started) planetState.playing = false;
       if (venusState.started)  venusState.playing  = false;
+    } else {
+      // El hero no tiene botón de play: reanúdalo automáticamente al volver.
+      if (heroState.started) heroState.playing = true;
     }
   });
 
