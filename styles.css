@@ -7,7 +7,7 @@
   --surface: #181b24;
   --ink:     #eaeef5;
   --ink2:    #b6bec9;
-  --ink3:    #8a92a3;
+  --ink3:    #a8adb8;
   --ink4:    #b0b9c8;
   --line:    rgba(220,230,250,0.06);
   --line2:   rgba(220,230,250,0.10);
@@ -21,7 +21,22 @@
   --cool2:   #87b8b2;
   --star:    rgba(120,140,170,0.4);
   --star-bright: rgba(160,180,210,0.8);
-  
+
+  /* ═══ Colores planetarios ═══ */
+  --planet-mercury:  #909098;
+  --planet-venus:    #e8a030;
+  --planet-mars:     #c85830;
+  --planet-jupiter:  #c0a060;
+  --planet-saturn:   #a88848;
+  --planet-uranus:   #40c0a8;
+  --planet-neptune:  #2858b8;
+  --planet-sun:      #f0c040;
+  --planet-moon:     #b0c0d0;
+
+  /* ═══ Semánticos retrogradación ═══ */
+  --retro:           #c03030;
+  --retro-alpha:     rgba(192,48,48,0.85);
+
   --sans: 'Inter', system-ui, sans-serif;
   --mono: 'JetBrains Mono', 'Courier New', monospace;
   --serif: 'EB Garamond', Georgia, serif;
@@ -54,7 +69,7 @@ body {
   font-weight: 350;
   font-size: 16px;
   line-height: 1.7;
-  overflow-x: hidden;
+  overflow-x: clip;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -176,7 +191,7 @@ nav {
   align-items: center;
   justify-content: flex-start;
   padding: 5rem 2rem 0;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 .hero-inner {
@@ -570,8 +585,8 @@ section {
 
 .ccard canvas {
   display: block;
-  width: 100% !important;
-  height: auto !important;
+  width: 100%;
+  height: auto;
 }
 
 .ctoolbar {
@@ -1235,6 +1250,11 @@ input:focus-visible {
   outline-offset: 2px;
 }
 
+.ctoolbar button:focus-visible {
+  outline: 2px solid var(--warm);
+  outline-offset: 2px;
+}
+
 /* Skip to main content link para accesibilidad */
 .skip-link {
   position: absolute;
@@ -1268,4 +1288,14 @@ input[type="range"]::-moz-range-thumb {
   background: #e67e22;
   border: none;
   cursor: pointer;
+}
+
+@media print {
+  body { overflow: visible !important; }
+  nav, .nav-toggle, canvas, .controls, #planet-selector, button { display: none !important; }
+  .hero { min-height: auto; padding: 1rem; }
+  .hero h1 { font-size: 2rem; }
+  .section { page-break-inside: avoid; break-inside: avoid; }
+  .info-grid { display: block; }
+  .info-card { width: 100%; margin-bottom: 1rem; border: 1px solid #ccc; }
 }

@@ -50,7 +50,7 @@ function orbPos3D(el, t) {
   };
 }
 
-const EARTH = { a: 1, e: ECC0, T: 365.25, M0: M0_EARTH, lonPeri: OMEGA_EARTH };
+const EARTH = { a: 1, e: ECC0, T: 365.259636, M0: M0_EARTH, lonPeri: OMEGA_EARTH };
 const VENUS = {
   a: 0.72333, e: 0.00677, T: 224.701,
   M0: 50.4161 * DEG, lonPeri: 131.5637 * DEG,
@@ -126,7 +126,7 @@ for (let d = 0; d <= 8 * 365.25 + 600; d += 0.05) {
 }
 const ics = [];
 for (let i = 1; i < pts.length - 1; i++) {
-  if (pts[i].inferior && pts[i].elong < pts[i - 1].elong && pts[i].elong <= pts[i + 1].elong) {
+  if (pts[i].inferior && pts[i].elong < pts[i - 1].elong && pts[i].elong < pts[i + 1].elong) {
     ics.push(pts[i]);
   }
 }
@@ -150,3 +150,15 @@ for (let i = 1; i < pts.length - 1; i++) {
   if (pts[i].elong > pts[i - 1].elong && pts[i].elong >= pts[i + 1].elong && pts[i].elong > 40) maxE.push(pts[i].elong);
 }
 console.log(`\n   Elongaciones máximas del modelo: ${Math.min(...maxE).toFixed(1)}° – ${Math.max(...maxE).toFixed(1)}° (referencia: 45°–47°)`);
+
+// ── 3. Verificación de regresión (exit code) ─────────────────────────────────
+let pass = true;
+const extCorregido = extremos(true).filter(x => Math.abs(x.valor) > 2).slice(0, 4);
+if (extCorregido.length < 4) { pass = false; process.stderr.write(`FAIL: Solo ${extCorregido.length} extremos detectados (esperados ≥4)\n`); }
+extCorregido.forEach((x, k) => {
+  const d = Math.abs(x.valor - REF[k].valor);
+  if (d > 1.0) { pass = false; process.stderr.write(`FAIL: ${REF[k].nombre} Δ=${d.toFixed(2)} min (umbral: 1.0 min)\n`); }
+});
+if (ics.length < 5) { pass = false; process.stderr.write(`FAIL: Solo ${ics.length} conjunciones inferiores detectadas (esperadas ≥5)\n`); }
+console.log(`\n═══ RESULTADO: ${pass ? 'PASS' : 'FAIL'} ═══`);
+process.exit(pass ? 0 : 1);

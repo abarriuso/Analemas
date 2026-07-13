@@ -1,0 +1,10 @@
+export const CBG = () => '#12141a';
+export const CGRID = () => 'rgba(180,190,210,0.06)';
+export const CAXIS = () => 'rgba(180,190,210,0.14)';
+export const CBLUE = (a = 1) => `rgba(160,180,210,${a})`;
+export const CWARM = (a = 1) => `rgba(196,155,114,${a})`;
+export const CDOT = () => '#dbb48a';
+export const CTTL = () => 'rgba(190,200,215,0.8)';
+export const CMON = (a = 1) => `rgba(160,175,200,${a})`;
+export const CLBL = () => 'rgba(180,190,210,0.85)';
+export const CRETRO = (a = 1) => `rgba(192,48,48,${a})`;

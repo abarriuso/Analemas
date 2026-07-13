@@ -21,3 +21,29 @@ desktop.ini
 # Capturas y frames de verificación
 gif-frames/
 ss-*.png
+
+# Entorno y secrets
+.env
+.env.*
+.env.local
+secrets.*
+credentials.*
+
+# Dependencias
+node_modules/
+
+# Logs
+*.log
+logs/
+
+# Claves y certificados
+*.key
+*.pem
+*.cert
+
+# Artefactos de build
+dist/
+build/
+
+# IDEs (JetBrains)
+.idea/
