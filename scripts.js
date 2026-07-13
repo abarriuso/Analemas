@@ -475,12 +475,14 @@
     }
 
     // Usar utilidad unificada de resize
-    setupCanvasResize(cv, (w, h) => {
+    setupCanvasResize(cv, (w, h, dpr) => {
       W = w; H = h;
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.scale(dpr, dpr);
       initStars();
-    }, { useContainer: false, debounceMs: 150 });
+    }, { useContainer: false, aspectRatio: window.innerWidth / window.innerHeight, debounceMs: 150 });
 
-    animate(0);
+    // El loop lo arranca el IntersectionObserver (evita doble requestAnimationFrame)
   })();
 
   // =========================================================================
@@ -583,10 +585,14 @@
         ctx.strokeStyle = colorBlue(0.25); ctx.lineWidth = 1.2; ctx.stroke();
 
         const endIdx = Math.min(Math.floor(currentPoint), currentPoints.length - 1);
-        for (let i = 1; i <= endIdx; i++) {
-          const p1 = currentPoints[i - 1], p2 = currentPoints[i];
-          ctx.beginPath(); ctx.moveTo(px(p1), py(p1)); ctx.lineTo(px(p2), py(p2));
-          ctx.strokeStyle = colorWarm(0.8); ctx.lineWidth = 1.5; ctx.stroke();
+        if (endIdx >= 1) {
+          ctx.beginPath();
+          ctx.strokeStyle = colorWarm(0.8); ctx.lineWidth = 1.5;
+          for (let i = 1; i <= endIdx; i++) {
+            const p1 = currentPoints[i - 1], p2 = currentPoints[i];
+            ctx.moveTo(px(p1), py(p1)); ctx.lineTo(px(p2), py(p2));
+          }
+          ctx.stroke();
         }
 
         events.forEach(ev => {
@@ -621,7 +627,7 @@
         ctx.restore();
       } catch (e) { console.warn('Canvas error:', e); }
     }
-    requestAnimationFrame(draw);
+    // El loop lo arranca el IntersectionObserver (evita doble requestAnimationFrame)
   })();
 
   // =========================================================================
