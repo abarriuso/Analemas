@@ -1,10 +1,19 @@
 # Analemas
 
+[![Deploy](https://github.com/abarriuso/Analemas/actions/workflows/deploy.yml/badge.svg)](https://github.com/abarriuso/Analemas/actions/workflows/deploy.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green)](LICENSE)
+[![JS](https://img.shields.io/badge/JS-Vanilla-%23F7DF1E?logo=javascript)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
+[![Canvas 2D](https://img.shields.io/badge/Canvas-2D-%23E34F26)](https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API)
+
 Simulación interactiva del analema solar, analemas geocéntricos planetarios y el pentagrama de Venus. Escrita en JavaScript puro (IIFE estricto) con Canvas 2D, sin dependencias externas ni proceso de compilación.
 
 [![Preview](preview.png)](https://abarriuso.github.io/Analemas/)
 
 **[→ Ver demo en vivo](https://abarriuso.github.io/Analemas/)**
+
+---
+
+> 📋 Los informes de auditoría se han movido a [`docs/auditoria/`](docs/auditoria/).
 
 ---
 
