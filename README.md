@@ -7,7 +7,7 @@
 
 Simulación interactiva del analema solar, analemas geocéntricos planetarios y el pentagrama de Venus. Escrita en JavaScript puro (IIFE estricto) con Canvas 2D, sin dependencias externas ni proceso de compilación.
 
-[![Preview](preview.png)](https://abarriuso.github.io/Analemas/)
+[![Preview](assets/preview.png)](https://abarriuso.github.io/Analemas/)
 
 **[→ Ver demo en vivo](https://abarriuso.github.io/Analemas/)**
 
