@@ -2,7 +2,7 @@
   "ci": {
     "collect": {
       "url": ["http://localhost:8080/index.html"],
-      "startServerCommand": "npx serve . -l 8080 --no-clipboard",
+      "startServerCommand": "pnpm dlx serve . -l 8080 --no-clipboard",
       "startServerTimeout": 10000,
       "numberOfRuns": 1
     },
