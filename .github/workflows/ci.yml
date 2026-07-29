@@ -21,12 +21,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
+          cache: pnpm
 
-      - run: npm ci
+      - run: pnpm install --frozen-lockfile
 
       # ── Validación científica (regresión orbital) ──
       - name: Validación astronómica
@@ -38,19 +42,19 @@ jobs:
 
       # ── ESLint ──
       - name: Lint JavaScript
-        run: npm run lint:js
+        run: pnpm lint:js
 
       # ── HTML Validate ──
       - name: Lint HTML
-        run: npm run lint:html
+        run: pnpm lint:html
 
       # ── Stylelint ──
       - name: Lint CSS
-        run: npm run lint:css
+        run: pnpm lint:css
 
       # ── Lighthouse CI ──
       - name: Lighthouse CI
-        run: npx lhci autorun
+        run: pnpm exec lhci autorun
 
   deploy:
     needs: lint-and-test

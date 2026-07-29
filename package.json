@@ -10,8 +10,8 @@
     "lint:js": "eslint scripts.js",
     "lint:html": "html-validate index.html",
     "lint:css": "stylelint styles.css",
-    "lint": "npm run lint:js && npm run lint:html && npm run lint:css",
-    "test": "npm run validate && npm run smoke && npm run lint"
+    "lint": "pnpm lint:js && pnpm lint:html && pnpm lint:css",
+    "test": "pnpm validate && pnpm smoke && pnpm lint"
   },
   "devDependencies": {
     "eslint": "^9.0.0",

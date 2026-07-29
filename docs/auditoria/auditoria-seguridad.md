@@ -104,7 +104,7 @@ Sin `url()`, `expression()`, `javascript:`, `@import`, `behavior`, `-moz-binding
 | ID | Ausencia | Riesgo |
 |----|----------|--------|
 | M‑G1 | `.env`, `.env.*`, `.env.local` | **Alto potencial** — Si existe algún `.env` con secrets, se comitearía |
-| M‑G2 | `node_modules/` | Medio — Si se añade npm en el futuro |
+| M‑G2 | `node_modules/` | Medio — Si se añade pnpm en el futuro |
 | M‑G3 | `*.log`, `logs/` | Medio — Logs de depuración con datos sensibles |
 | I‑G1 | `.idea/` (JetBrains) | Bajo |
 | I‑G2 | `dist/`, `build/` | Bajo |
