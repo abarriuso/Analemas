@@ -1,0 +1,14 @@
+minimumReleaseAgeExclude:
+  - brace-expansion@1.1.17
+# Fuerza versiones parcheadas de dependencias transitivas vulnerables
+# (reportadas por Dependabot/pnpm audit, arrastradas por @lhci/cli y
+# eslint), sin subir de major las dependencias directas. La línea 1.x
+# de brace-expansion se queda en su último parche (1.1.17) porque
+# minimatch@3.x (usado por eslint) rompe si se fuerza la mayor 5.x.
+overrides:
+  cookie@<0.7.0: ^0.7.0
+  tmp@<0.2.6: ^0.2.6
+  uuid@<11.1.1: ^11.1.1
+  fast-uri@<3.1.4: ^3.1.4
+  brace-expansion@<1.1.17: ^1.1.17
+  brace-expansion@>=2.0.0 <5.0.8: ^5.0.8

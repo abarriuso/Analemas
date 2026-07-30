@@ -13,7 +13,6 @@
   const DEG = Math.PI / 180;
 
   // Parámetros orbitales terrestres J2000.0 (Standish 1992, JPL/USNO)
-  const EPS0 = 23.4392911 * DEG;    // oblicuidad del eje terrestre (rad)
   const ECC0 = 0.016708634;          // excentricidad orbital terrestre
   const OMEGA_EARTH = 102.9372 * DEG;  // longitud heliocéntrica del perihelio terrestre ϖ⊕
   const M0_EARTH = 357.5293 * DEG;     // anomalía media terrestre en J2000.0 (1.5 ene 2000)
@@ -1023,7 +1022,7 @@
         }
 
         const end = Math.min(Math.round(planetState.day), pts.length - 1);
-        drawTrail(ctx, pts, end, p => [MX(p.x), MY(p.y)], i => pts[i].retro ? colorRetro(0.85) : colorBlue(0.85), 1.7);
+        drawTrail(ctx, pts, end, pt => [MX(pt.x), MY(pt.y)], i => pts[i].retro ? colorRetro(0.85) : colorBlue(0.85), 1.7);
 
         if (end > 0) {
           const cp = pts[end];

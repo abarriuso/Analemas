@@ -4,6 +4,9 @@
   "private": true,
   "type": "module",
   "description": "Analema solar — página educativa estática sin dependencias runtime",
+  "author": "Adrián Barriuso Pizarro",
+  "contributors": ["Sandra Fernández Domínguez"],
+  "license": "MIT",
   "scripts": {
     "validate": "node validacion.mjs",
     "smoke": "node smoke-test.cjs",
@@ -15,6 +18,7 @@
   },
   "devDependencies": {
     "eslint": "^9.0.0",
+    "@eslint/js": "^9.0.0",
     "html-validate": "^8.0.0",
     "stylelint": "^16.0.0",
     "stylelint-config-standard": "^36.0.0",
