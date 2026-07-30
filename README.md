@@ -13,7 +13,7 @@ Simulación interactiva del analema solar, analemas geocéntricos planetarios y 
 
 ---
 
-> 📋 Los informes de auditoría se han movido a [`docs/auditoria/`](docs/auditoria/).
+> Los informes de auditoría se han movido a [`docs/auditoria/`](docs/auditoria/).
 
 ---
 
