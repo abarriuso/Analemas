@@ -1,29 +1,28 @@
 {
+  "_comentario": "Cambio: se elimina el bloque 'upload'. Apuntaba a temporary-public-storage, que publica un informe de tu sitio en un servidor público de Google en cada ejecución. Sin ese bloque, lhci solo evalúa y falla si no se cumplen los umbrales. Se sube numberOfRuns a 3 y se toma la mediana: con 1 sola pasada los umbrales de performance dan falsos rojos por ruido del runner.",
   "ci": {
     "collect": {
       "url": ["http://localhost:8080/index.html"],
       "startServerCommand": "pnpm dlx serve . -l 8080 --no-clipboard",
       "startServerTimeout": 10000,
-      "numberOfRuns": 1
+      "numberOfRuns": 3
     },
     "assert": {
+      "preset": "lighthouse:no-pwa",
       "assertions": {
-        "categories:performance": ["error", { "minScore": 0.85 }],
-        "categories:accessibility": ["error", { "minScore": 0.90 }],
-        "categories:best-practices": ["error", { "minScore": 0.90 }],
-        "categories:seo": ["error", { "minScore": 0.80 }],
-        "first-contentful-paint": ["error", { "maxNumericValue": 3000 }],
-        "largest-contentful-paint": ["error", { "maxNumericValue": 4000 }],
-        "cumulative-layout-shift": ["error", { "maxNumericValue": 0.15 }],
-        "total-blocking-time": ["error", { "maxNumericValue": 500 }],
+        "categories:performance": ["error", { "minScore": 0.85, "aggregationMethod": "median" }],
+        "categories:accessibility": ["error", { "minScore": 0.9, "aggregationMethod": "median" }],
+        "categories:best-practices": ["error", { "minScore": 0.9, "aggregationMethod": "median" }],
+        "categories:seo": ["error", { "minScore": 0.8, "aggregationMethod": "median" }],
+        "first-contentful-paint": ["error", { "maxNumericValue": 3000, "aggregationMethod": "median" }],
+        "largest-contentful-paint": ["error", { "maxNumericValue": 4000, "aggregationMethod": "median" }],
+        "cumulative-layout-shift": ["error", { "maxNumericValue": 0.15, "aggregationMethod": "median" }],
+        "total-blocking-time": ["error", { "maxNumericValue": 500, "aggregationMethod": "median" }],
         "uses-webp-images": "off",
         "render-blocking-resources": "off",
         "uses-http2": "off",
         "csp-xss": "off"
       }
-    },
-    "upload": {
-      "target": "temporary-public-storage"
     }
   }
 }

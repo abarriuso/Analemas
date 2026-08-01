@@ -1,0 +1,32 @@
+# Analemas no tenía dependabot: ni las dependencias ni las actions se
+# actualizaban. Límite bajo de PRs abiertos para que no se acumulen 11 como
+# pasó en melanoma-detection-vgg16.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: '/'
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: 'chore(deps)'
+      prefix-development: 'chore(deps-dev)'
+    groups:
+      # Agrupa los parches para no recibir un PR por cada bump menor.
+      dev-minor-patch:
+        dependency-type: development
+        update-types: ['minor', 'patch']
+
+  - package-ecosystem: github-actions
+    directory: '/'
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: 'chore(ci)'
+    groups:
+      actions:
+        patterns: ['*']
+        update-types: ['minor', 'patch']

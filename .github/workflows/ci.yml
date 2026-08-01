@@ -1,3 +1,16 @@
+# CI: valida cada push y cada PR. NO despliega.
+#
+# Cambios respecto a la versión anterior:
+#  1. Se elimina el job `deploy`. Estaba duplicado con deploy.yml y ambos
+#     disparaban en push a main con grupos de concurrencia distintos
+#     (`pages-${{ github.ref }}` vs `pages`), así que no se cancelaban entre sí
+#     y competían por el mismo entorno github-pages.
+#  2. `permissions` baja a `contents: read`. Antes este workflow concedía
+#     `pages: write` e `id-token: write` a nivel de workflow, es decir también
+#     al job que ejecuta `pnpm install` (código de terceros). Un paquete
+#     comprometido en la cadena de dependencias habría podido publicar en Pages.
+#  3. Lighthouse solo en PR: es lo más lento del pipeline y no aporta en cada
+#     push a main.
 name: CI
 
 on:
@@ -8,18 +21,19 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
-  group: pages-${{ github.ref }}
+  group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   lint-and-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - uses: pnpm/action-setup@v4
         with:
@@ -32,42 +46,45 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      # ── Validación científica (regresión orbital) ──
+      # ── Validación científica (regresión orbital contra el Astronomical Almanac) ──
       - name: Validación astronómica
         run: node validacion.mjs
 
-      # ── Smoke test (load-time runtime errors) ──
+      # ── Smoke test (errores de runtime al cargar) ──
       - name: Smoke test
         run: node smoke-test.cjs
 
-      # ── ESLint ──
       - name: Lint JavaScript
         run: pnpm lint:js
 
-      # ── HTML Validate ──
       - name: Lint HTML
         run: pnpm lint:html
 
-      # ── Stylelint ──
       - name: Lint CSS
         run: pnpm lint:css
 
-      # ── Lighthouse CI ──
-      - name: Lighthouse CI
-        run: pnpm exec lhci autorun
-
-  deploy:
-    needs: lint-and-test
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+  lighthouse:
+    # Solo en PR: evita alargar cada push a main.
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+    timeout-minutes: 15
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
         with:
-          path: .
-      - id: deployment
-        uses: actions/deploy-pages@v4
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Lighthouse CI
+        run: pnpm exec lhci autorun
