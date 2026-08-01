@@ -17,7 +17,7 @@
     "test": "pnpm validate && pnpm smoke && pnpm lint"
   },
   "devDependencies": {
-    "eslint": "^9.0.0",
+    "eslint": "^10.8.0",
     "@eslint/js": "^9.0.0",
     "html-validate": "^8.0.0",
     "stylelint": "^16.0.0",
