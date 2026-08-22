@@ -26,7 +26,7 @@ Simulación interactiva del analema solar, analemas geocéntricos planetarios y 
 | Formalismo | Ecuación del tiempo, series de Fourier, solución de Kepler |
 | Solar | Analema terrestre interactivo — 365 días, estadísticas en tiempo real |
 | Planetas | Analemas geocéntricos de Mercurio a Neptuno, retrogradaciones en rojo |
-| Venus | Pentagrama de Venus — casi-resonancia 8:13:5, modelo 3D con inclinación, deriva de ~2.3°/ciclo |
+| Venus | Pentagrama de Venus — casi-resonancia 8:13:5, modelo 3D con inclinación, deriva de ~2.32°/ciclo |
 | Tabla | Parámetros comparativos J2000.0 del sistema solar |
 | Referencias | 22 fuentes bibliográficas en formato APA 7.ª ed., verificadas contra DOI/ADS/catálogos |
 
@@ -40,7 +40,7 @@ La ecuación del tiempo se desarrolla en series: `E_exc = −(2e − e³/4)·sin
 
 Los analemas planetarios geocéntricos se calculan en 400–600 pasos sobre el período sinódico. La retrogradación se detecta por el signo del incremento de longitud eclíptica entre fotogramas consecutivos (dos frames seguidos con δlon < 0).
 
-El pentagrama de Venus usa un **modelo 3D con inclinación orbital** (i = 3.39471°, Ω = 76.68069°) y une las **5 conjunciones inferiores** del ciclo de 8 años **en orden cronológico**: cada conjunción ocurre ~215.5° más adelante en longitud eclíptica, de modo que la estrella {5/2} emerge sola, sin reordenación artificial. El modelo reproduce las conjunciones inferiores reales de 2001–2007 con error ≤ 1 día (incluido el tránsito del 8 jun 2004, con elongación mínima de 0.18°). La casi-resonancia 8:13:5 **no es exacta**: la sexta conjunción cae ~2.3° por detrás de la primera y el pentagrama precesa una vuelta completa en ~1 300 años; la web lo muestra con un marcador rojo al completar el ciclo.
+El pentagrama de Venus usa un **modelo 3D con inclinación orbital** (i = 3.39471°, Ω = 76.68069°) y une las **5 conjunciones inferiores** del ciclo de 8 años **en orden cronológico**: cada conjunción ocurre ~215.5° más adelante en longitud eclíptica, de modo que la estrella {5/2} emerge sola, sin reordenación artificial. El modelo reproduce las conjunciones inferiores reales de 2001–2007 con error ≤ 1 día (incluido el tránsito del 8 jun 2004, con elongación mínima de 0.18°). La casi-resonancia 8:13:5 **no es exacta**: la sexta conjunción cae ~2.32° por detrás de la primera y el pentagrama precesa una vuelta completa en ~1 241 años (`node validacion.mjs`); la web lo muestra con un marcador rojo al completar el ciclo.
 
 ---
 

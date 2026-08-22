@@ -388,7 +388,9 @@
   // beginPath/stroke por frame en Solar y Planeta).
   //   proj(p)      -> [x, y] en coords de canvas
   //   strokeFor(i) -> color CSS del segmento i (permite, p.ej., retrógrado)
-  function drawTrail(ctx, pts, endIdx, proj, strokeFor, lineWidth) {
+  //   skipFor(i)   -> opcional: true para omitir el segmento i (p.ej. salto de
+  //                   envoltura angular en el analema planetario, ver wrap)
+  function drawTrail(ctx, pts, endIdx, proj, strokeFor, lineWidth, skipFor) {
     if (!pts || endIdx < 1) return;
     ctx.lineWidth = lineWidth;
     let cur = strokeFor(1);
@@ -397,6 +399,7 @@
     for (let i = 1; i <= endIdx; i++) {
       const c = strokeFor(i);
       if (c !== cur) { ctx.stroke(); ctx.beginPath(); ctx.strokeStyle = c; cur = c; }
+      if (skipFor && skipFor(i)) continue;
       const [x1, y1] = proj(pts[i - 1]);
       const [x2, y2] = proj(pts[i]);
       ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
@@ -841,7 +844,7 @@
     const totalDays = Math.min(p.syn * 2, 1800);
     const dt = totalDays / steps;
     const pts = [];
-    let prevRA = null, prevDeltaRA = null;
+    let prevRA = null, prevDeltaRA = null, prevDRA = null;
 
     // Elementos de la Tierra para orbPosInc (i=0, O=0 para eclíptica media J2000)
     const earthEl = { a: 1, e: ECC0, T: Te, M0: M0_EARTH, lonPeri: OMEGA_EARTH, i: 0, O: 0 };
@@ -880,6 +883,14 @@
       if (dRA > Math.PI) dRA -= TAU;
       if (dRA < -Math.PI) dRA += TAU;
 
+      // La normalización a (-π, π] introduce un salto de ~2π cuando dRA cruza
+      // el límite ±180° entre dos muestras (ocurre 1-2 veces en los planetas
+      // con retrogradación, al completar el eje horizontal una vuelta
+      // completa). Sin esta marca, drawTrail uniría los dos puntos con una
+      // línea recta que cruza todo el ancho del canvas.
+      const wrap = prevDRA !== null && Math.abs(dRA - prevDRA) > Math.PI;
+      prevDRA = dRA;
+
       // Retrogradación robusta: AR del planeta decreciente dos pasos consecutivos
       // (evita falsos positivos cerca de puntos estacionarios)
       let retro = false;
@@ -898,7 +909,7 @@
       const mag1 = Math.hypot(earthToSunX, earthToSunY, earthToSunZ);
       const elong = Math.acos(Math.max(-1, Math.min(1, dot / (mag1 * r)))) * 180 / Math.PI;
 
-      pts.push({ x: dRA, y: dec, day: d, retro, elong });
+      pts.push({ x: dRA, y: dec, day: d, retro, elong, wrap });
     }
     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
     for (const q of pts) {
@@ -1008,7 +1019,7 @@
         drawGrid(ctx, MX, MY, X0, X1, Y0, Y1, W, H, xm, ym);
 
         ctx.beginPath();
-        pts.forEach((q, i) => i === 0 ? ctx.moveTo(MX(q.x), MY(q.y)) : ctx.lineTo(MX(q.x), MY(q.y)));
+        pts.forEach((q, i) => (i === 0 || q.wrap) ? ctx.moveTo(MX(q.x), MY(q.y)) : ctx.lineTo(MX(q.x), MY(q.y)));
         ctx.strokeStyle = p.color + '18'; ctx.lineWidth = 1; ctx.stroke();
 
       if (planetState.playing && planetState.day < pts.length - 1) {
@@ -1022,7 +1033,7 @@
         }
 
         const end = Math.min(Math.round(planetState.day), pts.length - 1);
-        drawTrail(ctx, pts, end, pt => [MX(pt.x), MY(pt.y)], i => pts[i].retro ? colorRetro(0.85) : colorBlue(0.85), 1.7);
+        drawTrail(ctx, pts, end, pt => [MX(pt.x), MY(pt.y)], i => pts[i].retro ? colorRetro(0.85) : colorBlue(0.85), 1.7, i => pts[i].wrap);
 
         if (end > 0) {
           const cp = pts[end];
@@ -1106,12 +1117,19 @@
     let maxElongs = [];   // máximas elongaciones vespertinas/matutinas
     let infConjs = [];    // conjunciones inferiores: vértices del pentagrama
     const EXTRA_DAYS = 600;
+    // Paso de muestreo: igual al de validacion.mjs (0.05 d) para que la deriva
+    // del pentagrama mostrada en vivo (marcador rojo) coincida con la cifra
+    // documentada en README/index.html (≈2.32°/ciclo, ≈1241 años). Un paso más
+    // grueso (antes 0.5 d) localiza la 6.ª conjunción con menos precisión y
+    // da una deriva distinta (~2.4°) que no coincidía con la validación.
+    const VENUS_STEP_DAYS = 0.05;
+    const VENUS_PTS_PER_DAY = Math.round(1 / VENUS_STEP_DAYS); // 20
 
     function precompute() {
       vPts = [];
       const V = planetsData[1]; // Venus desde planetsData (J2000.0)
       const earthEl = { a: 1, e: ECC0, T: EARTH_T, M0: M0_EARTH, lonPeri: OMEGA_EARTH, i: 0, O: 0 };
-      for (let d = 0; d <= TOTAL_DAYS + EXTRA_DAYS; d += 0.5) {
+      for (let d = 0; d <= TOTAL_DAYS + EXTRA_DAYS; d += VENUS_STEP_DAYS) {
         const pe = orbPosInc(earthEl, d);
         const pv = orbPosInc(V, d);
         const dx = pv.x - pe.x, dy = pv.y - pe.y, dz = pv.z; // Tierra en z ≈ 0
@@ -1234,9 +1252,12 @@
         const zx = q => cx + RZ * Math.cos(q.lon - Math.PI / 2);
         const zy = q => cy + RZ * Math.sin(q.lon - Math.PI / 2);
 
-        // vPts tiene paso 0.5d → el índice i corresponde al día i/2
-        const maxIdx = Math.min(Math.round(endDay * 2), vPts.length - 1);
-        const step = (isMobile || hasLowMemory) ? 2 : 1;
+        // vPts tiene paso VENUS_STEP_DAYS → el índice i corresponde al día i/VENUS_PTS_PER_DAY
+        const maxIdx = Math.min(Math.round(endDay * VENUS_PTS_PER_DAY), vPts.length - 1);
+        // Downsample del trazado proporcional a VENUS_PTS_PER_DAY: mantiene el
+        // mismo número de segmentos dibujados por frame que con el paso 0.5d
+        // original (rendimiento), aunque vPts sea ahora 10x más denso.
+        const step = (isMobile || hasLowMemory) ? 20 : 10;
         let prevPt = null;
         for (let i = 0; i <= maxIdx; i += step) {
           const q = vPts[i];
@@ -1298,7 +1319,7 @@
         });
 
         if (endDay > 0) {
-          const cpIdx = Math.min(Math.round(endDay * 2), vPts.length - 1);
+          const cpIdx = Math.min(Math.round(endDay * VENUS_PTS_PER_DAY), vPts.length - 1);
           const cp = vPts[cpIdx];
           const { px, py } = toCanvas(cp.lon, cp.elong, cx, cy, R, VENUS_MAX_ELONG);
           ctx.beginPath(); ctx.arc(px, py, 10, 0, TAU); ctx.fillStyle = colorWarm(0.12); ctx.fill();
