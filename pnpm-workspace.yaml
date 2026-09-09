@@ -1,14 +1,23 @@
 minimumReleaseAgeExclude:
-  - brace-expansion@1.1.17
+  - brace-expansion@1.1.18
 # Fuerza versiones parcheadas de dependencias transitivas vulnerables
-# (reportadas por Dependabot/pnpm audit, arrastradas por @lhci/cli y
-# eslint), sin subir de major las dependencias directas. La línea 1.x
-# de brace-expansion se queda en su último parche (1.1.17) porque
+# (reportadas por Dependabot/pnpm audit, arrastradas por @lhci/cli,
+# stylelint y eslint), sin subir de major las dependencias directas. La
+# línea 1.x de brace-expansion se queda en su último parche porque
 # minimatch@3.x (usado por eslint) rompe si se fuerza la mayor 5.x.
+#
+# extract-zip (@lhci/cli > lighthouse > puppeteer-core) no tiene parche
+# publicado en ninguna versión, así que no se puede cubrir aquí.
 overrides:
   cookie@<0.7.0: ^0.7.0
   tmp@<0.2.6: ^0.2.6
   uuid@<11.1.1: ^11.1.1
-  fast-uri@<3.1.4: ^3.1.4
-  brace-expansion@<1.1.17: ^1.1.17
-  brace-expansion@>=2.0.0 <5.0.8: ^5.0.8
+  qs@<6.16.0: ^6.16.0
+  colord@<2.9.4: ^2.9.4
+  fast-uri@<3.1.6: ^3.1.6
+  brace-expansion@<1.1.18: ^1.1.18
+  brace-expansion@>=2.0.0 <5.0.9: ^5.0.9
+  ip-address@<10.3.1: ^10.3.1
+  postcss@<8.5.23: ^8.5.23
+  js-yaml@<3.15.1: ^3.15.1
+  js-yaml@>=4.0.0 <4.3.1: ^4.3.1
