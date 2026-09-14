@@ -151,7 +151,6 @@
         }
       } else {
         cssW = Math.min(maxWidth, Math.max(minWidth, window.innerWidth - 40));
-        cssH = cssW / aspectRatio;
       }
 
       // Clamp to min/max
