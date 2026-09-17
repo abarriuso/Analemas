@@ -14,6 +14,7 @@ Simulación interactiva del analema solar, analemas geocéntricos planetarios y 
 ---
 
 > Los informes de auditoría se han movido a [`docs/auditoria/`](docs/auditoria/).
+> La bibliografía canónica revisada está en [`docs/referencias-bibliograficas.md`](docs/referencias-bibliograficas.md).
 
 ---
 
@@ -28,23 +29,21 @@ Simulación interactiva del analema solar, analemas geocéntricos planetarios y 
 | Planetas | Analemas geocéntricos de Mercurio a Neptuno, retrogradaciones en rojo |
 | Venus | Pentagrama de Venus — casi-resonancia 8:13:5, modelo 3D con inclinación, deriva de ~2.32°/ciclo |
 | Tabla | Parámetros comparativos J2000.0 del sistema solar |
-| Referencias | 22 fuentes bibliográficas en formato APA 7.ª ed., verificadas contra DOI/ADS/catálogos |
+| Referencias | Bibliografía normalizada en APA 7.ª ed.; revisión de DOI, catálogos y fuentes institucionales |
 
 ---
 
 ## Motor orbital
 
-Para cada cuerpo se integran las leyes de Kepler a partir de seis elementos orbitales J2000.0 (Standish 1992, JPL Mean Elements): semieje mayor *a*, excentricidad *e*, período sidéreo *T*, longitud heliocéntrica del perihelio ϖ y anomalía media M₀ en J2000.0. La ecuación de Kepler `E − e·sin(E) = M` se resuelve por Newton-Raphson con umbral |ΔE| < 10⁻¹² (≤ 10 iteraciones para e < 0.3). Las posiciones se devuelven en coordenadas eclípticas heliocéntricas (eje +x → equinoccio vernal) y se proyectan al ecuador celeste con ε = 23.4393°.
+Para cada cuerpo se integran las leyes de Kepler a partir de seis elementos orbitales J2000.0 (Standish et al., 1992): semieje mayor *a*, excentricidad *e*, período sidéreo *T*, longitud heliocéntrica del perihelio ϖ y anomalía media M₀ en J2000.0. La ecuación de Kepler `E − e·sin(E) = M` se resuelve por Newton-Raphson con umbral |ΔE| < 10⁻¹² (≤ 10 iteraciones para e < 0.3). Las posiciones se devuelven en coordenadas eclípticas heliocéntricas (eje +x → equinoccio vernal) y se proyectan al ecuador celeste con ε = 23.4393°.
 
-La ecuación del tiempo se desarrolla en series: `E_exc = −(2e − e³/4)·sin M − (5/4)e²·sin 2M − (13/12)e³·sin 3M` (= −ecuación del centro a O(e³)) más la serie de oblicuidad hasta el sexto armónico en tan(ε/2) (Meeus 1998, cap. 28; Hughes, Yallop & Hohenkerk 1989). El error frente al *Astronomical Almanac* 2024 es **≤ 0.06 min ≈ 4 s** en amplitud y < 0.5 d en fecha para los cuatro extremos canónicos. Validación reproducible: `node validacion.mjs`.
+La ecuación del tiempo se desarrolla en series: `E_exc = −(2e − e³/4)·sin M − (5/4)e²·sin 2M − (13/12)e³·sin 3M` (= −ecuación del centro a O(e³)) más la serie de oblicuidad hasta el sexto armónico en tan(ε/2) (Meeus, 1998, cap. 28; Hughes, Yallop & Hohenkerk, 1989). El error frente al *Astronomical Almanac* 2024 es **≤ 0.06 min ≈ 4 s** en amplitud y < 0.5 d en fecha para los cuatro extremos canónicos. Validación reproducible: `node validacion.mjs`.
 
 Los analemas planetarios geocéntricos se calculan en 400–600 pasos sobre el período sinódico. La retrogradación se detecta por el signo del incremento de longitud eclíptica entre fotogramas consecutivos (dos frames seguidos con δlon < 0).
 
 El pentagrama de Venus usa un **modelo 3D con inclinación orbital** (i = 3.39471°, Ω = 76.68069°) y une las **5 conjunciones inferiores** del ciclo de 8 años **en orden cronológico**: cada conjunción ocurre ~215.5° más adelante en longitud eclíptica, de modo que la estrella {5/2} emerge sola, sin reordenación artificial. El modelo reproduce las conjunciones inferiores reales de 2001–2007 con error ≤ 1 día (incluido el tránsito del 8 jun 2004, con elongación mínima de 0.18°). La casi-resonancia 8:13:5 **no es exacta**: la sexta conjunción cae ~2.32° por detrás de la primera y el pentagrama precesa una vuelta completa en ~1 241 años (`node validacion.mjs`); la web lo muestra con un marcador rojo al completar el ciclo.
 
----
-
-## Parámetros J2000.0 (Standish 1992 · JPL Mean Elements)
+## Parámetros J2000.0 (Standish et al., 1992)
 
 | Planeta | a (UA) | e | ε | T sidéreo | S sinódico | ϖ | M₀ |
 |---|---|---|---|---|---|---|---|
@@ -58,13 +57,13 @@ El pentagrama de Venus usa un **modelo 3D con inclinación orbital** (i = 3.3947
 | Neptuno | 30.06896 | 0.00859 | 28.32° | 60 189 d | 367.5 d | 44.96° | 259.92° |
 
 ϖ = longitud heliocéntrica del perihelio. M₀ = anomalía media en J2000.0 (1.5 ene 2000).
-Fuentes: Standish (1992) · Williams (2024) · USNO/HMNAO (2024)
+Fuentes principales: Standish et al. (1992) · NASA NSSDCA/Williams · USNO/HMNAO.
 
 ---
 
 ## Ejecución
 
-```
+```text
 git clone https://github.com/abarriuso/Analemas.git
 cd Analemas
 # Abre index.html en el navegador — no requiere servidor
@@ -102,17 +101,17 @@ Estas simplificaciones se documentan también en `observaciones-criticas.md`, `d
 
 ## Referencias seleccionadas
 
-1. Meeus, J. (1998). *Astronomical Algorithms* (2.ª ed.). Willmann-Bell.
-2. Standish, E. M., Newhall, X. X., Williams, J. G., & Yeomans, D. K. (1992). Orbital ephemerides of the Sun, Moon, and planets. En P. K. Seidelmann (Ed.), *Explanatory supplement to the astronomical almanac* (cap. 5). University Science Books. [Elementos medios en línea](https://ssd.jpl.nasa.gov/planets/approx_pos.html)
-3. Williams, D. R. (2024). *Planetary Fact Sheets*. NASA GSFC.
-4. U.S. Naval Observatory & H.M. Nautical Almanac Office. (2024). *The Astronomical Almanac for the year 2024*.
-5. Hughes, D. W., Yallop, B. D., & Hohenkerk, C. Y. (1989). The equation of time. *MNRAS*, 238(4), 1529–1535. [doi:10.1093/mnras/238.4.1529](https://doi.org/10.1093/mnras/238.4.1529)
-6. Duffett-Smith, P. (1990). *Astronomy with your personal computer*. Cambridge University Press.
-7. Müller, M. (1995). Equation of time. *Acta Physica Polonica A*, 88(S-49).
-8. di Cicco, D. (1979). Exposing the analemma. *Sky & Telescope*, 57(6), 536–540.
-9. Bricker, V. R., & Bricker, H. M. (2011). *Astronomy in the Maya codices*. American Philosophical Society.
+1. Meeus, J. (1998). *Astronomical algorithms* (2.ª ed.). Willmann-Bell.
+2. Standish, E. M., Newhall, X. X., Williams, J. G., & Yeomans, D. K. (1992). Orbital ephemerides of the Sun, Moon, and planets. En P. K. Seidelmann (Ed.), *Explanatory supplement to the astronomical almanac* (ed. rev., cap. 5, pp. 279–323). University Science Books.
+3. Williams, D. R. (2025, 18 de marzo). *Planetary fact sheet—Metric*. NASA Goddard Space Flight Center, NSSDCA.
+4. U.S. Naval Observatory & H.M. Nautical Almanac Office. (2024). *The astronomical almanac for the year 2024*. U.S. Government Publishing Office & U.K. Hydrographic Office.
+5. Hughes, D. W., Yallop, B. D., & Hohenkerk, C. Y. (1989). The equation of time. *Monthly Notices of the Royal Astronomical Society, 238*(4), 1529–1535. https://doi.org/10.1093/mnras/238.4.1529
+6. Duffett-Smith, P. (1990). *Astronomy with your personal computer* (2.ª ed.). Cambridge University Press.
+7. Müller, M. (1995). Equation of time—Problem in astronomy. *Acta Physica Polonica A, 88*(Supl.), S-49.
+8. di Cicco, D. (1979, junio). Exposing the analemma. *Sky & Telescope, 57*(6), 536–540.
+9. Bricker, V. R., & Bricker, H. M. (2011). *Astronomy in the Maya codices*. American Philosophical Society. (Memoirs of the American Philosophical Society, Vol. 265.)
 
-[Lista completa de 22 referencias en la web →](https://abarriuso.github.io/Analemas/)
+**Bibliografía canónica completa:** [`docs/referencias-bibliograficas.md`](docs/referencias-bibliograficas.md)
 
 ---
 
