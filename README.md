@@ -11,6 +11,12 @@ Simulación interactiva del analema solar, analemas geocéntricos planetarios y 
 
 **[→ Ver demo en vivo](https://abarriuso.github.io/Analemas/)**
 
+## Capturas
+
+| Escritorio | Móvil |
+|:---:|:---:|
+| ![Analemas en escritorio](docs/screenshots/Analemas-desktop.png) | ![Analemas en móvil](docs/screenshots/Analemas-mobile.png) |
+
 ---
 
 > Los informes de auditoría se han movido a [`docs/auditoria/`](docs/auditoria/).
