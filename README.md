@@ -1,65 +1,63 @@
-# Analemas
+# Analemmas
 
 [![Deploy](https://github.com/abarriuso/Analemas/actions/workflows/deploy.yml/badge.svg)](https://github.com/abarriuso/Analemas/actions/workflows/deploy.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
-Simulación interactiva del analema solar, los analemas geocéntricos de los planetas y el pentagrama de Venus. JavaScript sin dependencias ni compilación, dibujado con Canvas 2D.
+**English** · [Español](README.es.md)
 
-**[→ Ver en vivo](https://abarriuso.github.io/Analemas/)**
+Interactive simulation of the solar analemma, the geocentric analemmas of the planets and the pentagram of Venus. Dependency-free JavaScript with no build step, drawn with Canvas 2D.
 
-| Escritorio | Móvil |
+**[→ Live demo](https://abarriuso.github.io/Analemas/)** · [Spanish version](https://abarriuso.github.io/Analemas/es/)
+
+| Desktop | Mobile |
 |:---:|:---:|
-| ![Analemas en escritorio](docs/screenshots/Analemas-desktop.png) | ![Analemas en móvil](docs/screenshots/Analemas-mobile.png) |
+| ![Analemmas on desktop](docs/screenshots/Analemas-desktop.png) | ![Analemmas on mobile](docs/screenshots/Analemas-mobile.png) |
 
-## Estructura
+## Layout
 
-| Archivo | Contenido |
+| File | Contents |
 |---|---|
-| `astro.js` | Motor orbital: Kepler, precesión, nutación, aberración, Sol aparente, posiciones geocéntricas, conjunciones |
-| `scripts.js` | Simulaciones, controles e interfaz; textos de la interfaz en `I18N` |
-| `index.html`, `styles.css` | Contenido y estilos |
-| `validacion.mjs` | Contrasta `astro.js` con el *Astronomical Almanac* y con conjunciones reales de Venus |
-| `smoke-test.cjs` | Ejecuta la página sobre un DOM mínimo: carga, fotogramas y controles |
+| `astro.js` | Orbital engine: Kepler, precession, nutation, aberration, apparent Sun, geocentric positions, conjunctions |
+| `scripts.js` | Simulations, controls and interface; interface strings in `I18N` (English and Spanish) |
+| `index.html`, `es/index.html`, `styles.css` | Content in English and in Spanish, and styles |
+| `lang.js` | Picks the language (see [Languages](#languages)) |
+| `validacion.mjs` | Checks `astro.js` against the *Astronomical Almanac* and real Venus conjunctions |
+| `smoke-test.cjs` | Runs the page on a minimal DOM in both languages: load, frames and controls |
 
-## Modelo
+## Model
 
-- Elementos medios J2000.0 fijos (Standish et al., 1992), sin perturbaciones entre planetas. Ecuación de Kepler por Newton-Raphson (|ΔE| < 10⁻¹²).
-- Posiciones heliocéntricas en 3D con la inclinación *i* y el nodo Ω de cada órbita. Longitudes referidas al equinoccio verdadero de la fecha: precesión IAU 2006 y nutación IAU 1980 (106 términos).
-- Ecuación del tiempo: `E_exc = −(2e − e³/4)·sin M − (5/4)e²·sin 2M − (13/12)e³·sin 3M` más la serie de oblicuidad hasta el sexto armónico en tan(ε/2), con la longitud aparente del Sol (incluida la aberración anual). Referencias: Meeus (1998), cap. 28, y Hughes, Yallop y Hohenkerk (1989).
-- Analemas planetarios: Δα = α − α☉ frente a δ durante dos períodos sinódicos. Retrogradación cuando la AR decrece dos pasos seguidos.
-- Venus: conjunciones inferiores como mínimos de elongación, refinados por sección áurea.
+- Fixed J2000.0 mean elements (Standish et al., 1992), with no planet-to-planet perturbations. Kepler's equation solved by Newton-Raphson (|ΔE| < 10⁻¹²).
+- Heliocentric positions in 3D with each orbit's inclination *i* and node Ω. Longitudes referred to the true equinox of date: IAU 2006 precession and IAU 1980 nutation (106 terms).
+- Equation of time: `E_exc = −(2e − e³/4)·sin M − (5/4)e²·sin 2M − (13/12)e³·sin 3M` plus the obliquity series up to the sixth harmonic in tan(ε/2), using the Sun's apparent longitude (annual aberration included). References: Meeus (1998), chap. 28, and Hughes, Yallop and Hohenkerk (1989).
+- Planetary analemmas: Δα = α − α☉ against δ over two synodic periods. Motion counts as retrograde when right ascension decreases for two steps in a row.
+- Venus: inferior conjunctions found as elongation minima, refined by golden-section search.
 
-Fuera del modelo: refracción, paralaje, perturbaciones y variación secular de los elementos. Es un proyecto divulgativo, no un generador de efemérides.
+Left out of the model: refraction, parallax, perturbations and secular variation of the elements. It is an outreach project, not an ephemeris generator.
 
-## Validación
+## Validation
 
 ```text
 pnpm install
-pnpm test        # validacion.mjs + smoke-test.cjs + ESLint, html-validate y Stylelint
+pnpm test        # validacion.mjs + smoke-test.cjs + ESLint, html-validate and Stylelint
 ```
 
-| Caso | Referencia | Resultado |
+| Case | Reference | Result |
 |---|---|---|
-| 4 extremos de la ecuación del tiempo | *Astronomical Almanac 2024* | Δ ≤ 0.06 min |
-| Conjunciones inferiores de Venus 2001–2009 | Fechas publicadas | < 1 día (tránsito de 2004 con elongación 0.17°) |
-| Deriva del pentagrama | — | −2.33° por ciclo de 8 años (≈ 1 230 años por vuelta) |
+| 4 extremes of the equation of time | *Astronomical Almanac 2024* | Δ ≤ 0.06 min |
+| Inferior conjunctions of Venus 2001–2009 | Published dates | < 1 day (2004 transit with 0.17° elongation) |
+| Pentagram drift | — | −2.33° per 8-year cycle (≈ 1 230 years per full turn) |
 
-## Ejecución
+## Running it
 
-Abre `index.html` en el navegador: funciona sin servidor.
+Open `index.html` (English) or `es/index.html` (Spanish) in a browser: no server needed.
 
-## Traducción
+## Languages
 
-La página está preparada para una segunda versión en otro idioma sin tocar el código:
+The site is in English at the root and in Spanish under `es/`, with an EN/ES link in the menu. `lang.js` sends Spanish-speaking browsers from the root to `es/` the first time; once a visitor picks a language with that link, the choice is remembered. Text drawn from JavaScript (buttons, chart labels, planet names and descriptions) comes from the `I18N` block in `scripts.js`, chosen by `<html lang>`.
 
-1. Copia `index.html` a `en/index.html`, pon `lang="en"`, antepón `../` a las rutas de `fonts/`, `styles.css`, `astro.js`, `scripts.js`, `favicon.svg` y `assets/`, y traduce el texto (incluidos `aria-label`, `<title>`, metadatos y el diagrama SVG).
-2. `scripts.js` elige los textos generados en JS (botones, rótulos de los gráficos, nombres y descripciones de planetas) según `<html lang>`; el bloque `I18N.en` ya está escrito.
-3. Enlaza ambas versiones con `<link rel="alternate" hreflang="…">` y un selector de idioma en la navegación.
-4. Añade `en` a la copia de archivos del job `build` en `.github/workflows/deploy.yml`.
+## Credits
 
-## Autores
+- **Idea and first prototype:** [Sandra Fernández Domínguez](https://www.linkedin.com/in/sandra-fern%C3%A1ndez-dom%C3%ADnguez-31836a323/). She came up with the project and built the first prototype of the site with an AI agent.
+- **Development:** [Adrián Barriuso Pizarro](https://github.com/abarriuso). He took it from that prototype to the current site: the orbital engine and its validation, the simulations, the tests and the deployment.
 
-**Sandra Fernández Domínguez** — [LinkedIn](https://www.linkedin.com/in/sandra-fern%C3%A1ndez-dom%C3%ADnguez-31836a323/)
-**Adrián Barriuso Pizarro** — [GitHub](https://github.com/abarriuso)
-
-Bibliografía completa: [`docs/referencias-bibliograficas.md`](docs/referencias-bibliograficas.md). Licencia MIT.
+Full bibliography: [`docs/references.md`](docs/references.md). MIT licence.

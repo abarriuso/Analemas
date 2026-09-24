@@ -47,7 +47,7 @@ jobs:
       - name: Stage site
         run: |
           mkdir -p _site/assets
-          cp -r index.html styles.css astro.js scripts.js favicon.svg fonts _site/
+          cp -r index.html es lang.js styles.css astro.js scripts.js favicon.svg fonts _site/
           cp assets/preview.png _site/assets/
       - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v5

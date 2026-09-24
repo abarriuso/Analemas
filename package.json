@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Analema solar, analemas planetarios y pentagrama de Venus — página estática sin dependencias de runtime",
+  "description": "Solar analemma, planetary analemmas and the pentagram of Venus — a static page with no runtime dependencies",
   "author": "Adrián Barriuso Pizarro",
   "contributors": [
     "Sandra Fernández Domínguez"
@@ -12,8 +12,8 @@
   "scripts": {
     "validate": "node validacion.mjs",
     "smoke": "node smoke-test.cjs",
-    "lint:js": "eslint astro.js scripts.js validacion.mjs smoke-test.cjs",
-    "lint:html": "html-validate index.html",
+    "lint:js": "eslint astro.js scripts.js lang.js validacion.mjs smoke-test.cjs",
+    "lint:html": "html-validate index.html es/index.html",
     "lint:css": "stylelint styles.css",
     "lint": "pnpm lint:js && pnpm lint:html && pnpm lint:css",
     "test": "pnpm validate && pnpm smoke && pnpm lint"

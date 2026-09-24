@@ -14,6 +14,13 @@ export default [
     languageOptions: { ecmaVersion: 2022, sourceType: 'script', globals: browser }
   },
   {
+    files: ['lang.js'],
+    languageOptions: {
+      ecmaVersion: 2022, sourceType: 'script',
+      globals: { document: 'readonly', location: 'readonly', localStorage: 'readonly', navigator: 'readonly', URLSearchParams: 'readonly' }
+    }
+  },
+  {
     files: ['validacion.mjs'],
     languageOptions: { ecmaVersion: 2022, sourceType: 'module', globals: { console: 'readonly', process: 'readonly' } }
   },
