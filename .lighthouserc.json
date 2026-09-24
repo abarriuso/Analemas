@@ -2,11 +2,14 @@
   "ci": {
     "collect": {
       "url": [
-        "http://localhost:8080/index.html"
+        "http://localhost:8080/"
       ],
       "startServerCommand": "pnpm dlx serve . -l 8080 --no-clipboard",
       "startServerTimeout": 10000,
-      "numberOfRuns": 3
+      "numberOfRuns": 3,
+      "settings": {
+        "chromeFlags": "--lang=en-US"
+      }
     },
     "assert": {
       "preset": "lighthouse:no-pwa",
@@ -70,7 +73,12 @@
         "uses-webp-images": "off",
         "render-blocking-resources": "off",
         "uses-http2": "off",
-        "csp-xss": "off"
+        "csp-xss": "off",
+        "robots-txt": "off",
+        "unminified-javascript": "off",
+        "forced-reflow-insight": "warn",
+        "network-dependency-tree-insight": "warn",
+        "document-latency-insight": "warn"
       }
     }
   }

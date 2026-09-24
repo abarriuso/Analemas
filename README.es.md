@@ -41,6 +41,8 @@ pnpm install
 pnpm test        # validacion.mjs + smoke-test.cjs + ESLint, html-validate y Stylelint
 ```
 
+Los pull requests pasan además Lighthouse CI (`pnpm dlx @lhci/cli@0.15.1 autorun`), que falla por debajo de los umbrales de rendimiento, accesibilidad, buenas prácticas y SEO de `.lighthouserc.json`.
+
 | Caso | Referencia | Resultado |
 |---|---|---|
 | 4 extremos de la ecuación del tiempo | *Astronomical Almanac 2024* | Δ ≤ 0.06 min |

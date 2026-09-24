@@ -48,5 +48,7 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm exec lhci autorun
+      # Lighthouse CI is fetched on demand instead of living in the lockfile:
+      # its puppeteer chain pulls extract-zip (unpatched), which is only used to
+      # download browsers — never here, where lhci drives the runner's Chrome.
+      - run: pnpm dlx @lhci/cli@0.15.1 autorun
