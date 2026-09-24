@@ -2,123 +2,64 @@
 
 [![Deploy](https://github.com/abarriuso/Analemas/actions/workflows/deploy.yml/badge.svg)](https://github.com/abarriuso/Analemas/actions/workflows/deploy.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green)](LICENSE)
-[![JS](https://img.shields.io/badge/JS-Vanilla-%23F7DF1E?logo=javascript)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
-[![Canvas 2D](https://img.shields.io/badge/Canvas-2D-%23E34F26)](https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API)
 
-Simulación interactiva del analema solar, analemas geocéntricos planetarios y el pentagrama de Venus. Escrita en JavaScript puro (IIFE estricto) con Canvas 2D, sin dependencias externas ni proceso de compilación.
+Simulación interactiva del analema solar, los analemas geocéntricos de los planetas y el pentagrama de Venus. JavaScript sin dependencias ni compilación, dibujado con Canvas 2D.
 
-[![Preview](assets/preview.png)](https://abarriuso.github.io/Analemas/)
-
-**[→ Ver demo en vivo](https://abarriuso.github.io/Analemas/)**
-
-## Capturas
+**[→ Ver en vivo](https://abarriuso.github.io/Analemas/)**
 
 | Escritorio | Móvil |
 |:---:|:---:|
 | ![Analemas en escritorio](docs/screenshots/Analemas-desktop.png) | ![Analemas en móvil](docs/screenshots/Analemas-mobile.png) |
 
----
+## Estructura
 
-> Los informes de auditoría se han movido a [`docs/auditoria/`](docs/auditoria/).
-> La bibliografía canónica revisada está en [`docs/referencias-bibliograficas.md`](docs/referencias-bibliograficas.md).
-
----
-
-## Contenido
-
-| Sección | Descripción |
+| Archivo | Contenido |
 |---|---|
-| Hero | Analema animado con eventos orbitales (perihelio, solsticios, equinoccios) |
-| Fundamentos | Excentricidad orbital y oblicuidad axial como causas del analema |
-| Formalismo | Ecuación del tiempo, series de Fourier, solución de Kepler |
-| Solar | Analema terrestre interactivo — 365 días, estadísticas en tiempo real |
-| Planetas | Analemas geocéntricos de Mercurio a Neptuno, retrogradaciones en rojo |
-| Venus | Pentagrama de Venus — casi-resonancia 8:13:5, modelo 3D con inclinación, deriva de ~2.32°/ciclo |
-| Tabla | Parámetros comparativos J2000.0 del sistema solar |
-| Referencias | Bibliografía normalizada en APA 7.ª ed.; revisión de DOI, catálogos y fuentes institucionales |
+| `astro.js` | Motor orbital: Kepler, precesión, nutación, aberración, Sol aparente, posiciones geocéntricas, conjunciones |
+| `scripts.js` | Simulaciones, controles e interfaz; textos de la interfaz en `I18N` |
+| `index.html`, `styles.css` | Contenido y estilos |
+| `validacion.mjs` | Contrasta `astro.js` con el *Astronomical Almanac* y con conjunciones reales de Venus |
+| `smoke-test.cjs` | Ejecuta la página sobre un DOM mínimo: carga, fotogramas y controles |
 
----
+## Modelo
 
-## Motor orbital
+- Elementos medios J2000.0 fijos (Standish et al., 1992), sin perturbaciones entre planetas. Ecuación de Kepler por Newton-Raphson (|ΔE| < 10⁻¹²).
+- Posiciones heliocéntricas en 3D con la inclinación *i* y el nodo Ω de cada órbita. Longitudes referidas al equinoccio verdadero de la fecha: precesión IAU 2006 y nutación IAU 1980 (106 términos).
+- Ecuación del tiempo: `E_exc = −(2e − e³/4)·sin M − (5/4)e²·sin 2M − (13/12)e³·sin 3M` más la serie de oblicuidad hasta el sexto armónico en tan(ε/2), con la longitud aparente del Sol (incluida la aberración anual). Referencias: Meeus (1998), cap. 28, y Hughes, Yallop y Hohenkerk (1989).
+- Analemas planetarios: Δα = α − α☉ frente a δ durante dos períodos sinódicos. Retrogradación cuando la AR decrece dos pasos seguidos.
+- Venus: conjunciones inferiores como mínimos de elongación, refinados por sección áurea.
 
-Para cada cuerpo se integran las leyes de Kepler a partir de seis elementos orbitales J2000.0 (Standish et al., 1992): semieje mayor *a*, excentricidad *e*, período sidéreo *T*, longitud heliocéntrica del perihelio ϖ y anomalía media M₀ en J2000.0. La ecuación de Kepler `E − e·sin(E) = M` se resuelve por Newton-Raphson con umbral |ΔE| < 10⁻¹² (≤ 10 iteraciones para e < 0.3). Las posiciones se devuelven en coordenadas eclípticas heliocéntricas (eje +x → equinoccio vernal) y se proyectan al ecuador celeste con ε = 23.4393°.
+Fuera del modelo: refracción, paralaje, perturbaciones y variación secular de los elementos. Es un proyecto divulgativo, no un generador de efemérides.
 
-La ecuación del tiempo se desarrolla en series: `E_exc = −(2e − e³/4)·sin M − (5/4)e²·sin 2M − (13/12)e³·sin 3M` (= −ecuación del centro a O(e³)) más la serie de oblicuidad hasta el sexto armónico en tan(ε/2) (Meeus, 1998, cap. 28; Hughes, Yallop & Hohenkerk, 1989). El error frente al *Astronomical Almanac* 2024 es **≤ 0.06 min ≈ 4 s** en amplitud y < 0.5 d en fecha para los cuatro extremos canónicos. Validación reproducible: `node validacion.mjs`.
+## Validación
 
-Los analemas planetarios geocéntricos se calculan en 400–600 pasos sobre el período sinódico. La retrogradación se detecta por el signo del incremento de longitud eclíptica entre fotogramas consecutivos (dos frames seguidos con δlon < 0).
+```text
+pnpm install
+pnpm test        # validacion.mjs + smoke-test.cjs + ESLint, html-validate y Stylelint
+```
 
-El pentagrama de Venus usa un **modelo 3D con inclinación orbital** (i = 3.39471°, Ω = 76.68069°) y une las **5 conjunciones inferiores** del ciclo de 8 años **en orden cronológico**: cada conjunción ocurre ~215.5° más adelante en longitud eclíptica, de modo que la estrella {5/2} emerge sola, sin reordenación artificial. El modelo reproduce las conjunciones inferiores reales de 2001–2007 con error ≤ 1 día (incluido el tránsito del 8 jun 2004, con elongación mínima de 0.18°). La casi-resonancia 8:13:5 **no es exacta**: la sexta conjunción cae ~2.32° por detrás de la primera y el pentagrama precesa una vuelta completa en ~1 241 años (`node validacion.mjs`); la web lo muestra con un marcador rojo al completar el ciclo.
-
-## Parámetros J2000.0 (Standish et al., 1992)
-
-| Planeta | a (UA) | e | ε | T sidéreo | S sinódico | ϖ | M₀ |
-|---|---|---|---|---|---|---|---|
-| **Tierra** | 1.00000 | 0.016709 | 23.4393° | 365.25 d | — | 102.94° | 357.53° |
-| Mercurio | 0.38710 | 0.20563 | 0.034° | 87.97 d | 115.9 d | 77.46° | 174.79° |
-| Venus | 0.72333 | 0.00677 | 177.4° | 224.701 d | 583.9 d | 131.56° | 50.42° |
-| Marte | 1.52366 | 0.09339 | 25.19° | 686.98 d | 779.9 d | 336.04° | 19.41° |
-| Júpiter | 5.20336 | 0.04839 | 3.13° | 4 332.6 d | 398.9 d | 14.73° | 19.68° |
-| Saturno | 9.53707 | 0.05415 | 26.73° | 10 759.2 d | 378.1 d | 92.60° | 317.35° |
-| Urano | 19.19126 | 0.04717 | 97.77° | 30 685.4 d | 369.7 d | 170.95° | 142.28° |
-| Neptuno | 30.06896 | 0.00859 | 28.32° | 60 189 d | 367.5 d | 44.96° | 259.92° |
-
-ϖ = longitud heliocéntrica del perihelio. M₀ = anomalía media en J2000.0 (1.5 ene 2000).
-Fuentes principales: Standish et al. (1992) · NASA NSSDCA/Williams · USNO/HMNAO.
-
----
+| Caso | Referencia | Resultado |
+|---|---|---|
+| 4 extremos de la ecuación del tiempo | *Astronomical Almanac 2024* | Δ ≤ 0.06 min |
+| Conjunciones inferiores de Venus 2001–2009 | Fechas publicadas | < 1 día (tránsito de 2004 con elongación 0.17°) |
+| Deriva del pentagrama | — | −2.33° por ciclo de 8 años (≈ 1 230 años por vuelta) |
 
 ## Ejecución
 
-```text
-git clone https://github.com/abarriuso/Analemas.git
-cd Analemas
-# Abre index.html en el navegador — no requiere servidor
-```
+Abre `index.html` en el navegador: funciona sin servidor.
 
----
+## Traducción
 
-## Simplificaciones declaradas
+La página está preparada para una segunda versión en otro idioma sin tocar el código:
 
-- Inclinaciones orbitales = 0 en los analemas geocéntricos de la sección 04 (el pentagrama de Venus de la sección 05 sí incluye i y Ω)
-- Perturbaciones N-cuerpos, evolución secular y correcciones relativistas ignoradas
-- Elementos *a, e, T, ϖ, M₀, ε* fijos en J2000.0 (sin precesión ni nutación)
-- Aberración estelar, refracción atmosférica y paralaje diurna no incluidas
-
-Estas simplificaciones se documentan también en `observaciones-criticas.md`, `dictamen-final.md` e `informe-auditoria.md`. El alcance del proyecto es divulgativo-educativo; no es un generador de efemérides de precisión.
-
----
-
-## Accesibilidad y rendimiento
-
-- **`prefers-reduced-motion`** respetado en los cinco canvases: si está activo, se muestra la curva completa estática sin animación de punto.
-- **Pausa fuera del viewport** vía `IntersectionObserver`: ningún canvas consume CPU cuando no es visible.
-- **DPR (device-pixel-ratio)** aplicado a todos los canvases para nitidez en pantallas Retina.
-- ARIA labels, `role="img"` en canvases, `aria-live="polite"` en estadísticas, focus visible, skip-link.
-- Lazy-start animaciones, memoización por planeta, caché DOM (`getElementById` solo al inicio).
-
----
+1. Copia `index.html` a `en/index.html`, pon `lang="en"`, antepón `../` a las rutas de `fonts/`, `styles.css`, `astro.js`, `scripts.js`, `favicon.svg` y `assets/`, y traduce el texto (incluidos `aria-label`, `<title>`, metadatos y el diagrama SVG).
+2. `scripts.js` elige los textos generados en JS (botones, rótulos de los gráficos, nombres y descripciones de planetas) según `<html lang>`; el bloque `I18N.en` ya está escrito.
+3. Enlaza ambas versiones con `<link rel="alternate" hreflang="…">` y un selector de idioma en la navegación.
+4. Añade `en` a la copia de archivos del job `build` en `.github/workflows/deploy.yml`.
 
 ## Autores
 
-**Sandra Fernández Domínguez** — [LinkedIn](https://www.linkedin.com/in/sandra-fern%C3%A1ndez-dom%C3%ADnguez-31836a323/)  
-**Adrián Barriuso Pizarro** — [GitHub @abarriuso](https://github.com/abarriuso)
+**Sandra Fernández Domínguez** — [LinkedIn](https://www.linkedin.com/in/sandra-fern%C3%A1ndez-dom%C3%ADnguez-31836a323/)
+**Adrián Barriuso Pizarro** — [GitHub](https://github.com/abarriuso)
 
----
-
-## Referencias seleccionadas
-
-1. Meeus, J. (1998). *Astronomical algorithms* (2.ª ed.). Willmann-Bell.
-2. Standish, E. M., Newhall, X. X., Williams, J. G., & Yeomans, D. K. (1992). Orbital ephemerides of the Sun, Moon, and planets. En P. K. Seidelmann (Ed.), *Explanatory supplement to the astronomical almanac* (ed. rev., cap. 5, pp. 279–323). University Science Books.
-3. Williams, D. R. (2025, 18 de marzo). *Planetary fact sheet—Metric*. NASA Goddard Space Flight Center, NSSDCA.
-4. U.S. Naval Observatory & H.M. Nautical Almanac Office. (2024). *The astronomical almanac for the year 2024*. U.S. Government Publishing Office & U.K. Hydrographic Office.
-5. Hughes, D. W., Yallop, B. D., & Hohenkerk, C. Y. (1989). The equation of time. *Monthly Notices of the Royal Astronomical Society, 238*(4), 1529–1535. https://doi.org/10.1093/mnras/238.4.1529
-6. Duffett-Smith, P. (1990). *Astronomy with your personal computer* (2.ª ed.). Cambridge University Press.
-7. Müller, M. (1995). Equation of time—Problem in astronomy. *Acta Physica Polonica A, 88*(Supl.), S-49.
-8. di Cicco, D. (1979, junio). Exposing the analemma. *Sky & Telescope, 57*(6), 536–540.
-9. Bricker, V. R., & Bricker, H. M. (2011). *Astronomy in the Maya codices*. American Philosophical Society. (Memoirs of the American Philosophical Society, Vol. 265.)
-
-**Bibliografía canónica completa:** [`docs/referencias-bibliograficas.md`](docs/referencias-bibliograficas.md)
-
----
-
-*MIT License · Vanilla JS · Sin dependencias · 2026*
+Bibliografía completa: [`docs/referencias-bibliograficas.md`](docs/referencias-bibliograficas.md). Licencia MIT.

@@ -1,12 +1,5 @@
-# Despliegue a GitHub Pages. Único workflow que publica.
-#
-# Cambios:
-#  1. Job `verify` previo: si la validación orbital, el smoke test o el lint
-#     fallan, NO se despliega. Antes deploy.yml publicaba sin comprobar nada.
-#  2. `permissions: {}` a nivel de workflow. Cada job pide solo lo suyo.
-#     `pages: write` vive únicamente en el job `deploy`, que no instala ni
-#     ejecuta código de terceros: se limita a publicar el artefacto.
-#     (Mismo patrón que melanoma-detection-vgg16/deploy.yml.)
+# Publica en GitHub Pages solo si pasan los tests. `pages: write` vive
+# únicamente en el job `deploy`.
 name: Deploy to GitHub Pages
 
 on:
@@ -21,7 +14,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  verify:
+  test:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -30,23 +23,19 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
-
       - uses: pnpm/action-setup@v6
         with:
           version: 11
-
       - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: pnpm
-
       - run: pnpm install --frozen-lockfile
-      - run: node validacion.mjs
-      - run: node smoke-test.cjs
-      - run: pnpm lint
+      - run: pnpm test
 
+  # Sin `pnpm install`: el artefacto publicado no pasa por código de terceros.
   build:
-    needs: verify
+    needs: test
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -54,13 +43,16 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
-
+      # Solo los archivos que sirve la web; el resto del repo no se publica.
+      - name: Stage site
+        run: |
+          mkdir -p _site/assets
+          cp -r index.html styles.css astro.js scripts.js favicon.svg fonts _site/
+          cp assets/preview.png _site/assets/
       - uses: actions/configure-pages@v6
-
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v5
+      - uses: actions/upload-pages-artifact@v5
         with:
-          path: '.'
+          path: _site
 
   deploy:
     needs: build

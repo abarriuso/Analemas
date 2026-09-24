@@ -1,6 +1,3 @@
-# Analemas no tenía dependabot: ni las dependencias ni las actions se
-# actualizaban. Límite bajo de PRs abiertos para que no se acumulen 11 como
-# pasó en melanoma-detection-vgg16.
 version: 2
 updates:
   - package-ecosystem: npm

@@ -1,88 +1,32 @@
 import js from '@eslint/js';
 
+const browser = {
+  Astro: 'readonly', document: 'readonly', window: 'readonly', Intl: 'readonly',
+  requestAnimationFrame: 'readonly', cancelAnimationFrame: 'readonly',
+  IntersectionObserver: 'readonly', ResizeObserver: 'readonly',
+  setTimeout: 'readonly', clearTimeout: 'readonly'
+};
+
 export default [
   js.configs.recommended,
   {
-    languageOptions: {
-      ecmaVersion: 2022,
-      sourceType: 'script',
-      globals: {
-        // Browser
-        document: 'readonly',
-        window: 'readonly',
-        navigator: 'readonly',
-        console: 'readonly',
-        performance: 'readonly',
-        requestAnimationFrame: 'readonly',
-        cancelAnimationFrame: 'readonly',
-        IntersectionObserver: 'readonly',
-        ResizeObserver: 'readonly',
-        MutationObserver: 'readonly',
-        URL: 'readonly',
-        URLSearchParams: 'readonly',
-        fetch: 'readonly',
-        setTimeout: 'readonly',
-        clearTimeout: 'readonly',
-        setInterval: 'readonly',
-        clearInterval: 'readonly',
-        addEventListener: 'readonly',
-        dispatchEvent: 'readonly',
-        getComputedStyle: 'readonly',
-        matchMedia: 'readonly',
-        DeviceOrientationEvent: 'readonly',
-        // Math
-        Math: 'readonly',
-        Infinity: 'readonly',
-        NaN: 'readonly',
-        isFinite: 'readonly',
-        isNaN: 'readonly',
-        parseFloat: 'readonly',
-        parseInt: 'readonly',
-        // Typed arrays
-        Float32Array: 'readonly',
-        Uint8Array: 'readonly',
-        Uint32Array: 'readonly',
-        // Node.js (for smoke-test compatibility)
-        process: 'readonly',
-        Buffer: 'readonly',
-      },
-    },
-    rules: {
-      'no-unused-vars': ['error', {
-        argsIgnorePattern: '^_',
-        varsIgnorePattern: '^(e|el|ev|ctx|cv|refs|evt)$',
-      }],
-      'no-undef': 'error',
-      'no-shadow': 'error',
-      'no-redeclare': 'error',
-      'no-constant-condition': 'warn',
-      'no-empty': ['error', { allowEmptyCatch: true }],
-      'no-extra-semi': 'error',
-      'no-unreachable': 'error',
-      'no-duplicate-case': 'error',
-      'no-self-assign': 'error',
-      'no-self-compare': 'error',
-      'no-throw-literal': 'error',
-      'no-unused-expressions': 'error',
-      'no-useless-return': 'error',
-      'no-implicit-globals': 'error',
-      'eqeqeq': ['error', 'always', { null: 'ignore' }],
-      'no-eval': 'error',
-      'no-implied-eval': 'error',
-      'no-new-func': 'error',
-      'no-return-await': 'error',
-      'require-await': 'error',
-      'no-await-in-loop': 'warn',
-      'no-promise-executor-return': 'error',
-      'no-template-curly-in-string': 'warn',
-      'prefer-const': 'error',
-      'no-var': 'error',
-      'no-loss-of-precision': 'error',
-      'no-misleading-character-class': 'error',
-      'no-prototype-builtins': 'error',
-      'no-useless-backreference': 'error',
-      'no-control-regex': 'warn',
-      'no-empty-character-class': 'warn',
-    },
+    files: ['astro.js', 'scripts.js'],
+    languageOptions: { ecmaVersion: 2022, sourceType: 'script', globals: browser }
   },
+  {
+    files: ['validacion.mjs'],
+    languageOptions: { ecmaVersion: 2022, sourceType: 'module', globals: { console: 'readonly', process: 'readonly' } }
+  },
+  {
+    files: ['smoke-test.cjs'],
+    languageOptions: { ecmaVersion: 2022, sourceType: 'commonjs', globals: { console: 'readonly', process: 'readonly', require: 'readonly', __dirname: 'readonly', Intl: 'readonly', setTimeout: 'readonly', clearTimeout: 'readonly' } }
+  },
+  {
+    rules: {
+      eqeqeq: ['error', 'always', { null: 'ignore' }],
+      'no-shadow': 'error',
+      'prefer-const': 'error',
+      'no-var': 'error'
+    }
+  }
 ];

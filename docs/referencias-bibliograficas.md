@@ -29,12 +29,12 @@ Bibliografía canónica revisada para el proyecto **Analemas**. La normalizació
 
 ## Correcciones importantes respecto de la lista anterior
 
-- **Heller et al. (2011):** el DOI correcto es `10.1051/0004-6361/201015809`; el DOI `...15817` que figuraba anteriormente era incorrecto. La ficha editorial de *Astronomy & Astrophysics* confirma volumen 528, artículo A27 y ese DOI. citeturn0search0
-- **Sawyer (1994):** la referencia correcta es *Bulletin of the British Sundial Society*, **6(2)**, junio de 1994, pp. **2–6**. El archivo de la British Sundial Society confirma tanto volumen/número como paginación; la parte II apareció en febrero de 1995, vol. 7(1), pp. 39–44. citeturn0search1turn0search3turn0search9
+- **Heller et al. (2011):** el DOI correcto es `10.1051/0004-6361/201015809`; el DOI `...15817` que figuraba anteriormente era incorrecto. La ficha editorial de *Astronomy & Astrophysics* confirma volumen 528, artículo A27 y ese DOI.
+- **Sawyer (1994):** la referencia correcta es *Bulletin of the British Sundial Society*, **6(2)**, junio de 1994, pp. **2–6**. El archivo de la British Sundial Society confirma tanto volumen/número como paginación; la parte II apareció en febrero de 1995, vol. 7(1), pp. 39–44.
 - **Standish et al. (1992):** se añaden las páginas **279–323** del capítulo 5.
 - **Bricker & Bricker (2011):** se identifica el volumen 265 de *Memoirs of the American Philosophical Society*.
-- **Williams:** no se debe etiquetar genéricamente la página de NASA como “2024”. La página de *Planetary Fact Sheet* actualmente identifica a David R. Williams como autor/curador y figura como actualizada el **18 de marzo de 2025**. La página de notas de las fichas figura actualizada el **6 de mayo de 2024**. citeturn2search0turn2search5
-- Las fuentes web que cambian con el tiempo deben citarse con su fecha de actualización cuando ésta esté disponible; APA 7 distingue las páginas actualizadas y las fechas de recuperación de las páginas estables. citeturn2search2turn2search11
+- **Williams:** no se debe etiquetar genéricamente la página de NASA como “2024”. La página de *Planetary Fact Sheet* actualmente identifica a David R. Williams como autor/curador y figura como actualizada el **18 de marzo de 2025**. La página de notas de las fichas figura actualizada el **6 de mayo de 2024**.
+- Las fuentes web que cambian con el tiempo deben citarse con su fecha de actualización cuando ésta esté disponible; APA 7 distingue las páginas actualizadas y las fechas de recuperación de las páginas estables.
 
 ## Jerarquía recomendada de fuentes
 
@@ -42,7 +42,7 @@ Para el texto científico del proyecto:
 
 1. **Cálculo de la ecuación del tiempo:** Hughes et al. (1989), Meeus (1998) y USNO/HMNAO.
 2. **Elementos orbitales y efemérides:** Standish et al. (1992), Seidelmann (1992) y recursos JPL/NASA.
-3. **Parámetros planetarios:** NASA NSSDCA/Williams, indicando la fecha de actualización concreta. Las propias notas de NASA advierten que los valores de las fichas no constituyen un único conjunto “oficial” y que pueden cambiar con la investigación. citeturn2search5
+3. **Parámetros planetarios:** NASA NSSDCA/Williams, indicando la fecha de actualización concreta. Las propias notas de NASA advierten que los valores de las fichas no constituyen un único conjunto “oficial” y que pueden cambiar con la investigación.
 4. **Exoplanetas/insolación:** Dobrovolskis (2013) y Heller et al. (2011).
 5. **Historia, fotografía y divulgación:** Aveni, Bricker & Bricker, di Cicco, Sawyer, Waugh, Lakdawalla y Urschel.
 
