@@ -48,3 +48,6 @@ build/
 # IDEs (JetBrains)
 .idea/
 _site/
+
+# Lighthouse CI reports
+.lighthouseci/

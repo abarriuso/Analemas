@@ -12,7 +12,7 @@
   "scripts": {
     "validate": "node validacion.mjs",
     "smoke": "node smoke-test.cjs",
-    "lint:js": "eslint astro.js scripts.js lang.js validacion.mjs smoke-test.cjs",
+    "lint:js": "eslint astro.js scripts.js lang.js validacion.mjs smoke-test.cjs tools",
     "lint:html": "html-validate index.html es/index.html",
     "lint:css": "stylelint styles.css",
     "lint": "pnpm lint:js && pnpm lint:html && pnpm lint:css",

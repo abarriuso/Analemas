@@ -1,7 +1,7 @@
-// Carga astro.js + scripts.js sobre un DOM mínimo, pone todas las
-// simulaciones a la vista, ejecuta varios fotogramas y pulsa sus controles,
-// una vez por idioma (index.html en inglés y es/index.html en español).
-// Falla si algo lanza una excepción.
+// Loads astro.js + scripts.js on a minimal DOM, brings every simulation into
+// view, runs frames and works every control (timeline, year, planets, events,
+// views), once per language (index.html in English, es/index.html in Spanish).
+// Fails if anything throws or a readout is left empty.
 //   node smoke-test.cjs
 'use strict';
 
@@ -18,19 +18,23 @@ const sources = ['astro.js', 'scripts.js'].map(f => [f, fs.readFileSync(path.joi
 
 function smoke(lang) {
   const elements = new Map();
+  const created = [];
   function el(id) {
     if (!elements.has(id)) {
       const listeners = {};
       elements.set(id, {
-        id, dataset: {}, style: {}, textContent: '', value: '10', width: 0, height: 0,
+        id, dataset: {}, style: {}, textContent: '', value: '10', max: '100', checked: false, hidden: true,
+        width: 0, height: 0,
         clientWidth: 800,
         parentElement: { clientWidth: 800 },
         classList: { toggle: noop, contains: () => false },
         setAttribute: noop, append: noop, appendChild: noop, focus: noop,
         querySelectorAll: () => [],
+        getBoundingClientRect: () => ({ left: 0, top: 0 }),
         getContext: () => ctx2d,
         addEventListener: (type, fn) => { (listeners[type] = listeners[type] || []).push(fn); },
-        fire: (type, ev) => (listeners[type] || []).forEach(fn => fn(ev || { target: { closest: () => null } }))
+        fire: (type, ev) => (listeners[type] || []).forEach(fn => fn(Object.assign(
+          { target: { closest: () => null }, preventDefault: noop, key: '', shiftKey: false, clientX: 400, clientY: 300 }, ev)))
       });
     }
     return elements.get(id);
@@ -41,7 +45,7 @@ function smoke(lang) {
     document: {
       documentElement: { lang },
       getElementById: el,
-      createElement: () => el('dyn-' + elements.size),
+      createElement: () => { const e = el('dyn-' + elements.size); created.push(e); return e; },
       addEventListener: noop
     },
     window: {
@@ -54,9 +58,10 @@ function smoke(lang) {
     IntersectionObserver: class {
       constructor(cb) { this.cb = cb; }
       observe() { this.cb([{ isIntersecting: true }]); }
+      disconnect() {}
     },
     ResizeObserver: class { observe() {} },
-    Intl, Math, Number, String, Object, Map, setTimeout, clearTimeout
+    Intl, Math, Number, String, Object, Map, Date, Array, setTimeout, clearTimeout
   };
   sandbox.globalThis = sandbox;
   vm.createContext(sandbox);
@@ -72,21 +77,65 @@ function smoke(lang) {
 
   for (const [f, code] of sources) vm.runInContext(code, sandbox, { filename: f });
   runFrames(30);
+
+  // Timelines: buttons, scrubber, keyboard and hover.
   for (const p of ['solar', 'pl', 'ven']) {
     for (const b of ['complete', 'play', 'reset', 'play', 'play']) el(`${p}-${b}`).fire('click');
+    el(`${p}-scrub`).value = '40';
+    el(`${p}-scrub`).fire('input');
+    for (const key of ['ArrowRight', 'ArrowLeft', 'End', 'Home', ' ']) el(`${p}-canvas`).fire('keydown', { key });
+    el(`${p}-canvas`).fire('pointermove');
     runFrames(5);
+    el(`${p}-canvas`).fire('pointerleave');
+    el(`${p}-spd`).fire('input');
+    runFrames(3);
   }
+
+  // Solar: years at both ends of the range and the two effects apart.
+  el('solar-year').value = '1800'; el('solar-year').fire('change');
+  el('solar-prev').fire('click');
+  el('solar-year').value = '2050'; el('solar-year').fire('change');
+  el('solar-next').fire('click');
+  el('solar-comp').checked = true; el('solar-comp').fire('change');
+  runFrames(3);
+
+  // Planets: every planet button, previous/next event and back to today.
+  const planetButtons = created.filter(e => e.dataset.id);
+  if (planetButtons.length !== 7) throw new Error(`[${lang}] ${planetButtons.length} planet buttons, expected 7`);
+  for (const b of planetButtons) {
+    b.fire('click');
+    el('pl-next').fire('click');
+    el('pl-prev').fire('click');
+    el('pl-fan').fire('change');
+    runFrames(3);
+    for (const id of ['pl-ev', 'pl-s1', 'pl-s2', 'pl-dur', 'pl-arc', 'pl-lon']) {
+      if (!el(id).textContent || el(id).textContent === '—') throw new Error(`[${lang}] ${b.dataset.id}: ${id} is empty`);
+    }
+  }
+  el('pl-today').fire('click');
+
+  // Venus: cycles, overlays.
+  el('ven-next').fire('click');
+  el('ven-prev').fire('click');
+  el('ven-overlay').value = '4'; el('ven-overlay').fire('input');
+  runFrames(3);
+
   el('nav-toggle').fire('click');
-  // El texto del botón sale del diccionario del idioma de la página.
-  const expected = lang === 'es' ? 'Pausar' : 'Pause';
-  if (el('solar-play').textContent !== expected) {
-    throw new Error(`[${lang}] solar-play shows "${el('solar-play').textContent}", expected "${expected}"`);
+
+  // Button text comes from the page language.
+  const expected = lang === 'es' ? ['Reproducir', 'Pausar', 'Repetir'] : ['Play', 'Pause', 'Replay'];
+  if (!expected.includes(el('solar-play').textContent)) {
+    throw new Error(`[${lang}] solar-play shows "${el('solar-play').textContent}"`);
+  }
+  if (!el('hero-today').textContent) throw new Error(`[${lang}] hero "today" line is empty`);
+  for (const id of ['sol-date', 'sol-eq', 'sol-noon', 'sol-peri', 'ven-date', 'ven-side', 'ven-cyclbl']) {
+    if (!el(id).textContent) throw new Error(`[${lang}] ${id} is empty`);
   }
 }
 
 try {
   for (const lang of ['en', 'es']) smoke(lang);
-  console.log('OK — carga, dibujo y controles sin errores (en, es)');
+  console.log('OK — load, drawing and controls without errors (en, es)');
 } catch (err) {
   console.error('SMOKE TEST FAILED:', err.stack);
   process.exit(1);

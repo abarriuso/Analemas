@@ -21,8 +21,8 @@ export default [
     }
   },
   {
-    files: ['validacion.mjs'],
-    languageOptions: { ecmaVersion: 2022, sourceType: 'module', globals: { console: 'readonly', process: 'readonly' } }
+    files: ['validacion.mjs', 'tools/*.mjs'],
+    languageOptions: { ecmaVersion: 2022, sourceType: 'module', globals: { console: 'readonly', process: 'readonly', URL: 'readonly', URLSearchParams: 'readonly', fetch: 'readonly' } }
   },
   {
     files: ['smoke-test.cjs'],

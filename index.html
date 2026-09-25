@@ -7,9 +7,9 @@
   <meta http-equiv="Content-Security-Policy"
     content="default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; base-uri 'self'; form-action 'none'; object-src 'none'">
   <meta name="referrer" content="strict-origin-when-cross-origin">
-  <title>Analemmas — Orbital mechanics and celestial geometry</title>
+  <title>Analemmas — From the sundial to the pentagram of Venus</title>
   <meta name="description"
-    content="Interactive simulation of the solar analemma, planetary analemmas and the pentagram of Venus, computed from J2000.0 orbital elements and checked against the Astronomical Almanac.">
+    content="The equation of time, the solar analemma, the retrograde loops of the planets and the pentagram of Venus, computed by a small ephemeris engine validated against NASA/JPL Horizons.">
   <link rel="canonical" href="https://abarriuso.github.io/Analemas/">
   <link rel="alternate" hreflang="en" href="https://abarriuso.github.io/Analemas/">
   <link rel="alternate" hreflang="es" href="https://abarriuso.github.io/Analemas/es/">
@@ -19,8 +19,8 @@
   <meta property="og:locale" content="en_GB">
   <meta property="og:locale:alternate" content="es_ES">
   <meta property="og:url" content="https://abarriuso.github.io/Analemas/">
-  <meta property="og:title" content="Analemmas — Orbital mechanics and celestial geometry">
-  <meta property="og:description" content="Interactive simulation of the solar analemma, planetary analemmas and the pentagram of Venus.">
+  <meta property="og:title" content="Analemmas — From the sundial to the pentagram of Venus">
+  <meta property="og:description" content="The equation of time, retrograde loops and the pentagram of Venus, computed by an ephemeris engine validated against NASA/JPL.">
   <meta property="og:image" content="https://abarriuso.github.io/Analemas/assets/preview.png">
   <meta name="twitter:card" content="summary_large_image">
   <link rel="stylesheet" href="fonts/fonts.css">
@@ -43,10 +43,10 @@
       <li><a href="#que-es">Basics</a></li>
       <li><a href="#matematica">Formalism</a></li>
       <li><a href="#solar">Sun</a></li>
-      <li><a href="#planetas">Planets</a></li>
+      <li><a href="#planetas">Loops</a></li>
       <li><a href="#venus">Venus</a></li>
       <li><a href="#tabla">Comparison</a></li>
-      <li><a href="#referencias">References</a></li>
+      <li><a href="#referencias">Method</a></li>
       <li class="nav-lang"><a href="es/?lang=es" hreflang="es" lang="es" aria-label="Ver en español">ES</a></li>
     </ul>
   </nav>
@@ -55,13 +55,17 @@
 
   <section id="hero">
     <div class="hero-canvas-wrap">
-      <canvas id="hero-canvas" role="img" aria-label="Earth's solar analemma: a figure-eight curve with perihelion, aphelion, equinoxes and solstices marked."></canvas>
+      <canvas id="hero-canvas" role="img" aria-label="This year's solar analemma in its true proportions on the sky: a narrow figure eight with the solstices, equinoxes, perihelion, aphelion and today marked."></canvas>
     </div>
+    <p class="hero-kicker">Orbital mechanics · checked against NASA/JPL</p>
     <h1 class="hero-title">Analemmas</h1>
     <p class="hero-desc">
-      Photograph the Sun every day at the same time for a year and its position traces a figure eight in the
-      sky. This page computes that curve from Kepler's laws and extends it to the planets.
+      A sundial agrees with mean solar time on only four days a year. The rest of the time the Sun runs up to
+      16 minutes ahead or 14 behind, and its noon position draws a figure eight. This page computes that curve
+      with a small ephemeris engine and follows the same mechanics to the retrograde loops of the planets and the
+      pentagram of Venus.
     </p>
+    <p class="hero-today" id="hero-today"></p>
   </section>
 
   <section id="que-es">
@@ -93,7 +97,7 @@
             projection of the Sun's motion onto the celestial equator uneven through the year and produces the
             north–south component of the analemma. The contribution E<sub>obl</sub>(λ) vanishes at the equinoxes and
             solstices and reaches its four extremes near λ ≈ 45°, 135°, 225° and 315°, halfway through each season
-            (Müller, 1995; USNO/HMNAO, 2024).</p>
+            (Müller, 1995; Meeus, 1998, chap. 28).</p>
         </div>
       </div>
       <div class="prose">
@@ -133,6 +137,12 @@
           <div class="fdef"><span class="v">T</span> — anomalistic orbital period (days)</div>
           <div class="fdef"><span class="v">t</span> — time since perihelion (days)</div>
         </div>
+      </div>
+      <div class="prose">
+        <p>The simulation does not stop at the series. It computes E from its definition, the Greenwich hour angle of
+          the apparent Sun minus mean solar time, with the Earth rotation angle and the IAU 2006 sidereal-time
+          polynomial (Petit &amp; Luzum, 2010); the series is kept to show the two effects apart, and both agree to
+          within one second.</p>
       </div>
       <div class="fbox">
         <div class="fbox-ttl">Kepler's equation — Newton-Raphson solution</div>
@@ -223,10 +233,11 @@
       </div>
       <div class="hbox">
         <h3>How large Earth's equation of time gets</h3>
-        <p>Extremes of E(t): ~Feb 11–12 (−14.2 min), ~May 14 (+3.7 min), ~Jul 26 (−6.5 min) and ~Nov 3 (+16.4 min).
-          The components behave differently: E<sub>exc</sub> vanishes at perihelion and aphelion and reaches ±7.7 min
-          in early April and early October; E<sub>obl</sub> vanishes at the equinoxes and solstices and reaches
-          ±9.9 min around the middle of each season (Hughes et al., 1989; Meeus, 1998, chap. 28; Müller, 1995).</p>
+        <p>In 2024 the extremes of E(t) were −14 min 12 s (11 February), +3 min 39 s (13 May), −6 min 33 s (25 July)
+          and +16 min 27 s (2 November); they shift by a few seconds from year to year. The components behave
+          differently: E<sub>exc</sub> vanishes at perihelion and aphelion and reaches ±7.7 min in early April and
+          early October; E<sub>obl</sub> vanishes at the equinoxes and solstices and reaches ±9.9 min around the
+          middle of each season (Hughes et al., 1989; Meeus, 1998, chap. 28; Müller, 1995).</p>
       </div>
     </div>
   </section>
@@ -239,42 +250,61 @@
       <div class="ly-solar">
         <div>
           <div class="ccard">
-            <canvas id="solar-canvas" role="img" aria-label="Animation of Earth's solar analemma: the asymmetric figure eight is drawn day by day, with a mark at the start of each month."></canvas>
+            <canvas id="solar-canvas" tabindex="0" role="img" aria-describedby="solar-help" aria-label="Earth's solar analemma for the chosen year: the equation of time against the Sun's declination, drawn day by day, with a mark at the start of each month."></canvas>
+            <div class="ctip" id="solar-tip" hidden></div>
             <div class="ctoolbar">
-              <label for="solar-spd">Speed</label>
-              <input type="range" id="solar-spd" min="1" max="40" value="10" step="1">
-              <span class="slbl" id="solar-spd-lbl">10×</span>
-              <button id="solar-play" type="button">Pause</button>
-              <button id="solar-reset" type="button">↺ Restart</button>
-              <button id="solar-complete" type="button">Complete</button>
+              <button id="solar-play" class="bplay" type="button" aria-pressed="false">Play</button>
+              <button id="solar-reset" type="button" aria-label="Restart">↺</button>
+              <input type="range" id="solar-scrub" class="scrub" min="0" max="365" value="0" step="1" aria-label="Day of the year">
+              <output id="solar-when" class="when" for="solar-scrub"></output>
+              <button id="solar-complete" type="button">Whole year</button>
+            </div>
+            <div class="ctoolbar ctoolbar2">
+              <span class="grp">
+                <button id="solar-prev" type="button" aria-label="Previous year">◀</button>
+                <label for="solar-year">Year</label>
+                <input type="number" id="solar-year" min="1800" max="2050" step="1" value="2026">
+                <button id="solar-next" type="button" aria-label="Next year">▶</button>
+              </span>
+              <label class="chk"><input type="checkbox" id="solar-comp"> The two effects apart</label>
+              <span class="grp grp-spd">
+                <label for="solar-spd">Speed</label>
+                <input type="range" id="solar-spd" min="1" max="40" value="10" step="1">
+                <span class="slbl" id="solar-spd-lbl">10×</span>
+              </span>
             </div>
           </div>
+          <p class="howto" id="solar-help">Drag the slider or use ← → on the chart to go day by day (Shift for ten
+            days); hover the curve to read any date. Any year from 1800 to 2050.</p>
           <div class="legrow">
-            <div class="legitem"><span class="ldot sw-warm2"></span>Current position</div>
-            <div class="legitem"><span class="lseg sw-hi2"></span>Yearly path</div>
-            <div class="legitem"><span class="ldot sw-hi2"></span>Start of month</div>
+            <div class="legitem"><span class="ldot sw-acc"></span>Current day</div>
+            <div class="legitem"><span class="lseg sw-acc"></span>Yearly path</div>
+            <div class="legitem"><span class="lseg sw-cool dashed"></span>Each effect alone</div>
           </div>
         </div>
         <div class="sidecol">
           <div class="dcard">
-            <div class="dcard-t">Status</div>
-            <div class="drow"><span class="dk">Day of year</span><span class="dv" id="sol-day">1</span></div>
-            <div class="drow"><span class="dk">Equation of time</span><span class="dv" id="sol-eq">0.0 min</span></div>
-            <div class="drow"><span class="dk">Solar declination</span><span class="dv" id="sol-decl">0.0°</span></div>
-            <div class="drow"><span class="dk">Progress</span><span class="dv" id="sol-pct">0%</span></div>
+            <div class="dcard-t">Day</div>
+            <div class="drow"><span class="dk">Date (12:00 UT)</span><span class="dv" id="sol-date">—</span></div>
+            <div class="drow"><span class="dk">Equation of time</span><span class="dv" id="sol-eq">—</span></div>
+            <div class="drow"><span class="dk">Sundial noon</span><span class="dv" id="sol-noon">—</span></div>
+            <div class="drow"><span class="dk">· eccentricity term</span><span class="dv" id="sol-exc">—</span></div>
+            <div class="drow"><span class="dk">· obliquity term</span><span class="dv" id="sol-obl">—</span></div>
+            <div class="drow"><span class="dk">Declination δ</span><span class="dv" id="sol-decl">—</span></div>
           </div>
           <div class="dcard">
-            <div class="dcard-t">Parameters (J2000.0)</div>
-            <div class="drow"><span class="dk">Eccentricity e</span><span class="dv">0.016709</span></div>
-            <div class="drow"><span class="dk">Obliquity ε</span><span class="dv">23.439°</span></div>
-            <div class="drow"><span class="dk">Anomalistic year</span><span class="dv">365.260 d</span></div>
-            <div class="drow"><span class="dk">Perihelion</span><span class="dv">~3 January</span></div>
-            <div class="drow"><span class="dk">Aphelion</span><span class="dv">~4 July</span></div>
+            <div class="dcard-t">The year in the model</div>
+            <div class="drow"><span class="dk">Eccentricity e</span><span class="dv" id="sol-e">—</span></div>
+            <div class="drow"><span class="dk">True obliquity ε</span><span class="dv" id="sol-eps">—</span></div>
+            <div class="drow"><span class="dk">March equinox</span><span class="dv" id="sol-eqx">—</span></div>
+            <div class="drow"><span class="dk">Perihelion</span><span class="dv" id="sol-peri">—</span></div>
+            <div class="drow"><span class="dk">Aphelion</span><span class="dv" id="sol-aph">—</span></div>
           </div>
           <div class="shapec">
             <div class="sn">Asymmetric figure eight</div>
-            <div class="sd">The lower lobe (Nov–Feb) is larger because Earth's perihelion falls in the northern
-              winter, when Earth moves fastest. The left and right extremes mark E(t) ≈ −14 min and +16 min.</div>
+            <div class="sd">The lower lobe (Nov–Feb) is larger because perihelion falls in the northern winter, when
+              Earth moves fastest. "Sundial noon" is the local mean time at which a sundial shows 12:00; to turn it
+              into clock time, add your offset from the time-zone meridian.</div>
           </div>
         </div>
       </div>
@@ -289,16 +319,17 @@
   <section id="planetas">
     <div class="wrap">
       <div class="sec-head"><span class="sec-n">04</span>
-        <h2 class="sec-t">Geocentric planetary analemmas</h2>
+        <h2 class="sec-t">Retrograde loops</h2>
       </div>
       <div class="prose">
-        <p>When an <strong>outer planet is observed from Earth</strong> at the same local time, its path includes
-          retrograde loops: Earth overtakes the outer planets in its orbit, which produces an apparent backward motion
-          lasting weeks or months (Meeus, 1998, chap. 36).</p>
-        <p>In the charts, the horizontal axis is Δα = α<sub>planet</sub> − α<sub>Sun</sub> and the vertical axis is
-          δ<sub>planet</sub>. Both are geocentric and computed in three dimensions with the real inclination <i>i</i>
-          and node Ω of each orbit (Standish et al., 1992). It is a useful construction for seeing retrograde motion
-          and elongations, not the planet's own equation of time. The pattern repeats with the
+        <p>Seen from Earth, a planet usually drifts eastwards among the stars. Around <strong>opposition</strong>
+          (the outer planets) or <strong>inferior conjunction</strong> (Mercury and Venus) it stops, backs westwards
+          for weeks or months and then carries on: a <strong>retrograde loop</strong>. Nothing happens to the planet;
+          it is the Earth overtaking it, or being overtaken, on the inside lane (Meeus, 1998, chap. 36).</p>
+        <p>The animation shows both views at once. On the left, the orbits seen from above, with the line of sight
+          from the Earth through the planet; on the right, where that line points on the sky, with the retrograde
+          stretch in red between the two stationary points S1 and S2. Every event is a real one between 1800 and 2050,
+          and its dates match the JPL ephemeris to within a few hours. The pattern repeats with the
           <strong>synodic period</strong> S:</p>
       </div>
       <div class="fbox">
@@ -307,43 +338,65 @@
             class="v">T</span><sub>P</sub>|<span class="c">← valid for outer and inner planets</span></div>
       </div>
       <div class="planet-bar" id="planet-bar" role="group" aria-label="Planet"></div>
-      <div class="ly2">
-        <div>
-          <div class="ccard">
-            <canvas id="pl-canvas" role="img" aria-label="Geocentric analemma of the selected planet over two synodic periods: direct motion in blue and retrograde motion in red."></canvas>
-            <div class="ctoolbar">
-              <label for="pl-spd">Speed</label>
-              <input type="range" id="pl-spd" min="1" max="80" value="25" step="1">
-              <span class="slbl" id="pl-spd-lbl">25×</span>
-              <button id="pl-play" type="button">Pause</button>
-              <button id="pl-reset" type="button">↺ Restart</button>
-              <button id="pl-complete" type="button">Complete</button>
-            </div>
-          </div>
-          <div class="legrow">
-            <div class="legitem"><span class="lseg sw-hi2"></span>Direct motion</div>
-            <div class="legitem"><span class="lseg sw-retro"></span>Retrograde motion</div>
-            <div class="legitem"><span class="ldot" id="leg-pdot"></span><span id="leg-pname"></span></div>
-          </div>
+      <div class="evbar">
+        <button id="pl-prev" type="button" aria-label="Previous event">◀</button>
+        <span class="evlbl" id="pl-evlbl" aria-live="polite">—</span>
+        <button id="pl-next" type="button" aria-label="Next event">▶</button>
+        <button id="pl-today" type="button">Next from today</button>
+      </div>
+      <div class="ccard">
+        <canvas id="pl-canvas" tabindex="0" role="img" aria-describedby="pl-help" aria-label="Retrograde loop of the selected planet. Left: the orbits of the Earth and the planet seen from above, with the lines of sight from the Earth. Right: the planet's path on the sky, retrograde stretch in red between the stationary points."></canvas>
+        <div class="ctip" id="pl-tip" hidden></div>
+        <div class="ctoolbar">
+          <button id="pl-play" class="bplay" type="button" aria-pressed="false">Play</button>
+          <button id="pl-reset" type="button" aria-label="Restart">↺</button>
+          <input type="range" id="pl-scrub" class="scrub" min="0" max="100" value="0" step="1" aria-label="Date">
+          <output id="pl-when" class="when" for="pl-scrub"></output>
+          <button id="pl-complete" type="button">Whole loop</button>
         </div>
-        <div class="sidecol">
-          <div class="dcard">
-            <div class="dcard-t">Status</div>
-            <div class="drow"><span class="dk">Days</span><span class="dv" id="pl-day">0</span></div>
-            <div class="drow"><span class="dk">Elongation</span><span class="dv" id="pl-elong">0.0°</span></div>
-            <div class="drow"><span class="dk">Progress</span><span class="dv" id="pl-pct">0%</span></div>
-            <div class="drow"><span class="dk">Retrograde</span><span class="dv" id="pl-retro">No</span></div>
-          </div>
-          <div class="dcard">
-            <div class="dcard-t" id="pl-head">—</div>
-            <div class="drow"><span class="dk">Synodic period</span><span class="dv" id="pl-syn">—</span></div>
-            <div class="drow"><span class="dk">Retrograde period</span><span class="dv" id="pl-retdur">—</span></div>
-            <div class="drow"><span class="dk">Eccentricity</span><span class="dv" id="pl-ecc">—</span></div>
-          </div>
-          <div class="shapec">
-            <div class="sn" id="pl-shname">—</div>
-            <div class="sd" id="pl-shdesc"></div>
-          </div>
+        <div class="ctoolbar ctoolbar2">
+          <label class="chk"><input type="checkbox" id="pl-fan" checked> Lines of sight</label>
+          <span class="seg" id="pl-frame" role="group" aria-label="Sky coordinates">
+            <button type="button" data-v="ecl" aria-pressed="true">Ecliptic λ β</button>
+            <button type="button" data-v="equ" aria-pressed="false">Equatorial α δ</button>
+          </span>
+          <span class="grp grp-spd">
+            <label for="pl-spd">Speed</label>
+            <input type="range" id="pl-spd" min="1" max="40" value="10" step="1">
+            <span class="slbl" id="pl-spd-lbl">10×</span>
+          </span>
+        </div>
+      </div>
+      <p class="howto" id="pl-help">◀ ▶ jump to the previous or next event. On the chart, ← → move day by day; hover
+        the sky path to read any date. East is on the left, as on a sky chart facing south.</p>
+      <div class="legrow">
+        <div class="legitem"><span class="lseg sw-cool"></span>Direct motion</div>
+        <div class="legitem"><span class="lseg sw-alert"></span>Retrograde motion</div>
+        <div class="legitem"><span class="ldot sw-alert"></span>Stationary points S1, S2</div>
+        <div class="legitem"><span class="ldot ring"></span>Opposition / conjunction</div>
+        <div class="legitem"><span class="ldot sw-earth"></span>Earth</div>
+      </div>
+      <div class="cardrow">
+        <div class="dcard">
+          <div class="dcard-t">Now</div>
+          <div class="drow"><span class="dk">Longitude λ</span><span class="dv" id="pl-lon">—</span></div>
+          <div class="drow"><span class="dk">Latitude β</span><span class="dv" id="pl-lat">—</span></div>
+          <div class="drow"><span class="dk">Elongation</span><span class="dv" id="pl-elong">—</span></div>
+          <div class="drow"><span class="dk">Distance</span><span class="dv" id="pl-dist">—</span></div>
+          <div class="drow"><span class="dk">Motion</span><span class="dv" id="pl-motion">—</span></div>
+        </div>
+        <div class="dcard">
+          <div class="dcard-t" id="pl-head">—</div>
+          <div class="drow"><span class="dk">Event</span><span class="dv" id="pl-ev">—</span></div>
+          <div class="drow"><span class="dk">S1 · retrograde from</span><span class="dv" id="pl-s1">—</span></div>
+          <div class="drow"><span class="dk">S2 · direct again</span><span class="dv" id="pl-s2">—</span></div>
+          <div class="drow"><span class="dk">Retrograde for</span><span class="dv" id="pl-dur">—</span></div>
+          <div class="drow"><span class="dk">Arc travelled back</span><span class="dv" id="pl-arc">—</span></div>
+          <div class="drow"><span class="dk">Closest to Earth</span><span class="dv" id="pl-near">—</span></div>
+        </div>
+        <div class="shapec">
+          <div class="sn" id="pl-shname">—</div>
+          <div class="sd" id="pl-shdesc"></div>
         </div>
       </div>
     </div>
@@ -356,21 +409,43 @@
       </div>
       <div class="ly-venus">
         <div>
+          <div class="seg seg-view" id="ven-view" role="group" aria-label="View">
+            <button type="button" data-v="sky" aria-pressed="true">From Earth: elongation</button>
+            <button type="button" data-v="above" aria-pressed="false">From above: Earth–Venus line</button>
+          </div>
           <div class="ccard">
-            <canvas id="ven-canvas" role="img" aria-label="Pentagram of Venus: the five inferior conjunctions of an 8-year cycle, joined in chronological order on the zodiac ring, form a five-pointed star that does not quite close (it drifts about 2.3 degrees per cycle). The inner curve shows Venus's daily elongation from the Sun."></canvas>
+            <canvas id="ven-canvas" tabindex="0" role="img" aria-describedby="ven-help" aria-label="Pentagram of Venus: the five inferior conjunctions of an 8-year cycle, joined in chronological order on the zodiac ring, form a five-pointed star that does not quite close. The inner curve is Venus's elongation from the Sun; the alternative view draws the Earth–Venus line every three days, seen from above."></canvas>
             <div class="ctoolbar">
-              <label for="ven-spd">Speed</label>
-              <input type="range" id="ven-spd" min="1" max="80" value="30" step="1">
-              <span class="slbl" id="ven-spd-lbl">30×</span>
-              <button id="ven-play" type="button">Pause</button>
-              <button id="ven-reset" type="button">↺ Restart</button>
-              <button id="ven-complete" type="button">Show 8 years</button>
+              <button id="ven-play" class="bplay" type="button" aria-pressed="false">Play</button>
+              <button id="ven-reset" type="button" aria-label="Restart">↺</button>
+              <input type="range" id="ven-scrub" class="scrub" min="0" max="2922" value="0" step="1" aria-label="Date">
+              <output id="ven-when" class="when" for="ven-scrub"></output>
+              <button id="ven-complete" type="button">8 years</button>
+            </div>
+            <div class="ctoolbar ctoolbar2">
+              <span class="grp">
+                <button id="ven-prev" type="button" aria-label="Previous cycle">◀</button>
+                <span class="evlbl" id="ven-cyclbl" aria-live="polite">—</span>
+                <button id="ven-next" type="button" aria-label="Next cycle">▶</button>
+              </span>
+              <span class="grp">
+                <label for="ven-overlay">Cycles</label>
+                <input type="range" id="ven-overlay" min="1" max="4" value="1" step="1">
+                <span class="slbl" id="ven-overlay-lbl">1</span>
+              </span>
+              <span class="grp grp-spd">
+                <label for="ven-spd">Speed</label>
+                <input type="range" id="ven-spd" min="1" max="40" value="20" step="1">
+                <span class="slbl" id="ven-spd-lbl">20×</span>
+              </span>
             </div>
           </div>
+          <p class="howto" id="ven-help">"Cycles" overlays the stars of the following 8-year cycles in blue, to show
+            how the figure turns. ◀ ▶ move a whole cycle between 1800 and 2050.</p>
           <div class="legrow">
-            <div class="legitem"><span class="ldot sw-venus"></span>Inferior conjunction (vertex)</div>
-            <div class="legitem"><span class="ldot sw-warm2"></span>Greatest eastern elongation (evening)</div>
-            <div class="legitem"><span class="ldot sw-hi2"></span>Greatest western elongation (morning)</div>
+            <div class="legitem"><span class="ldot sw-acc"></span>Inferior conjunction (vertex)</div>
+            <div class="legitem"><span class="ldot sw-acc2"></span>Greatest eastern elongation (evening)</div>
+            <div class="legitem"><span class="ldot sw-cool"></span>Greatest western elongation (morning)</div>
           </div>
         </div>
         <div>
@@ -388,18 +463,20 @@
             <div class="fline fnote">Mismatch: ~2.3 days in 8 years (0.08 %) → the pentagram drifts ≈ −2.3° per cycle</div>
           </div>
           <div class="prose">
-            <p>Each inferior conjunction happens ≈ <strong>215.5° further on</strong> in ecliptic longitude
+            <p>Each inferior conjunction happens on average ≈ <strong>215.5° further on</strong> in ecliptic longitude
               (≡ 144.5° back): joining them in chronological order gives the {5/2} star, with its five vertices
               ≈ 72° apart. But the sixth conjunction does not land on the first: it falls ≈ 2.3° behind, so the
-              pentagram does not close and turns a full circle in ≈ 1 230 years. When the cycle completes, the red
-              marker shows the sixth conjunction.</p>
+              pentagram does not close and turns a full circle in ≈ 1 250 years. When the cycle completes, the red
+              marker shows the sixth conjunction. Seen from above, the same five dates mark five points of the
+              Earth's orbit, and the Earth–Venus line sweeps out a five-petalled rose.</p>
           </div>
           <div class="dcard">
-            <div class="dcard-t">Status — Venus</div>
-            <div class="drow"><span class="dk">Days</span><span class="dv" id="ven-day">0</span></div>
-            <div class="drow"><span class="dk">Years</span><span class="dv" id="ven-yr">0.00</span></div>
-            <div class="drow"><span class="dk">Elongation</span><span class="dv" id="ven-elong">0.0°</span></div>
-            <div class="drow"><span class="dk">8-year cycle</span><span class="dv" id="ven-cyc">0%</span></div>
+            <div class="dcard-t">Venus now</div>
+            <div class="drow"><span class="dk">Date</span><span class="dv" id="ven-date">—</span></div>
+            <div class="drow"><span class="dk">Years into the cycle</span><span class="dv" id="ven-yr">0.00</span></div>
+            <div class="drow"><span class="dk">Elongation</span><span class="dv" id="ven-elong">—</span></div>
+            <div class="drow"><span class="dk">Visible as</span><span class="dv" id="ven-side">—</span></div>
+            <div class="drow"><span class="dk">Distance</span><span class="dv" id="ven-dist">—</span></div>
           </div>
           <div class="hbox">
             <h3>Venus in ancient astronomy</h3>
@@ -429,7 +506,7 @@
               <th scope="col">ε</th>
               <th scope="col">Sidereal T</th>
               <th scope="col">Synodic S*</th>
-              <th scope="col">Shape</th>
+              <th scope="col">Retrograde†</th>
               <th scope="col">Note</th>
             </tr>
           </thead>
@@ -440,8 +517,8 @@
               <td class="mn">23.44°</td>
               <td class="mn">365.256 d</td>
               <td class="mn">—</td>
-              <td><span class="pill">Asymmetric 8</span></td>
-              <td>E(t) ∈ [−14, +16] min</td>
+              <td class="mn">—</td>
+              <td>Solar analemma: asymmetric figure eight, E(t) ∈ [−14, +16.5] min</td>
             </tr>
             <tr>
               <td><span class="sw-moon">●</span> Moon</td>
@@ -449,8 +526,8 @@
               <td class="mn">6.68°</td>
               <td class="mn">27.32 d</td>
               <td class="mn">29.53 d</td>
-              <td><span class="pill">Tilted oval</span></td>
-              <td>Monthly cycle. Orbital inclination 5.14°</td>
+              <td class="mn">never</td>
+              <td>Orbital inclination 5.14°; always moves east among the stars</td>
             </tr>
             <tr>
               <td><span class="sw-mercury">●</span> Mercury</td>
@@ -458,7 +535,7 @@
               <td class="mn">0.034°</td>
               <td class="mn">87.97 d</td>
               <td class="mn">115.9 d</td>
-              <td><span class="pill">Compact loop</span></td>
+              <td class="mn">20–24 d · 8.5–16°</td>
               <td>Greatest elongation 18°–28°</td>
             </tr>
             <tr>
@@ -467,8 +544,8 @@
               <td class="mn">177.4°</td>
               <td class="mn">224.7 d</td>
               <td class="mn">583.9 d</td>
-              <td><span class="pill">8-year pentagram</span></td>
-              <td>8:13:5 near resonance</td>
+              <td class="mn">41–43 d · 15–16.5°</td>
+              <td>8:13:5 near resonance: the pentagram</td>
             </tr>
             <tr>
               <td><span class="sw-mars">●</span> Mars</td>
@@ -476,8 +553,8 @@
               <td class="mn">25.19°</td>
               <td class="mn">686.98 d</td>
               <td class="mn">779.9 d</td>
-              <td><span class="pill">Variable loop</span></td>
-              <td>Retrograde motion differs at perihelic and aphelic oppositions</td>
+              <td class="mn">60–81 d · 10–19.5°</td>
+              <td>Longest loops at aphelic oppositions, shortest at perihelic ones</td>
             </tr>
             <tr>
               <td><span class="sw-jupiter">●</span> Jupiter</td>
@@ -485,8 +562,8 @@
               <td class="mn">3.13°</td>
               <td class="mn">4 332 d</td>
               <td class="mn">398.9 d</td>
-              <td><span class="pill">Uniform loops</span></td>
-              <td>One retrograde loop per year</td>
+              <td class="mn">118–124 d · 10°</td>
+              <td>One loop a year</td>
             </tr>
             <tr>
               <td><span class="sw-saturn">●</span> Saturn</td>
@@ -494,8 +571,8 @@
               <td class="mn">26.73°</td>
               <td class="mn">10 759 d</td>
               <td class="mn">378.1 d</td>
-              <td><span class="pill">Regular loops</span></td>
-              <td>Retrograde ≈ 138 days/year</td>
+              <td class="mn">134–141 d · 7°</td>
+              <td>Loops nearly identical year after year</td>
             </tr>
             <tr>
               <td><span class="sw-uranus">●</span> Uranus</td>
@@ -503,7 +580,7 @@
               <td class="mn">97.77°</td>
               <td class="mn">30 685 d</td>
               <td class="mn">369.7 d</td>
-              <td><span class="pill">Dense loops</span></td>
+              <td class="mn">149–154 d · 4°</td>
               <td>Retrograde rotation (ε &gt; 90°)</td>
             </tr>
             <tr>
@@ -512,16 +589,16 @@
               <td class="mn">28.32°</td>
               <td class="mn">60 189 d</td>
               <td class="mn">367.5 d</td>
-              <td><span class="pill">Static loops</span></td>
+              <td class="mn">156–160 d · 2.8°</td>
               <td>Barely moves between cycles</td>
             </tr>
           </tbody>
         </table>
       </div>
-      <p class="note">* Synodic period relative to Earth. Shape: solar analemma for Earth and geocentric analemma
-        (§04–05) for the rest. Eccentricities: values from the NASA <em>fact sheets</em> (Williams, 2025); the
-        simulation uses the J2000.0 mean elements of Standish et al. (1992), which differ slightly
-        (e.g. e<sub>Jupiter</sub> = 0.0484, e<sub>Saturn</sub> = 0.0542).</p>
+      <p class="note">* Synodic period relative to Earth. † Duration between the stationary points and arc travelled
+        backwards, minimum–maximum over 1900–2050, computed with this site's engine. e, ε and T: NASA
+        <em>fact sheets</em> (Williams, 2025); the simulation uses the mean elements of Standish and Williams (1992),
+        which differ slightly (e.g. e<sub>Jupiter</sub> = 0.0484, e<sub>Saturn</sub> = 0.0539).</p>
       <div class="hbox">
         <h3>Minor bodies and exoplanets</h3>
         <p>Pluto (e = 0.249, ε ≈ 122.5°; Williams, 2025) would produce one of the most complex analemmas. On
@@ -536,39 +613,98 @@
       <div class="sec-head"><span class="sec-n">07</span>
         <h2 class="sec-t">Method and references</h2>
       </div>
-      <div class="hbox">
-        <h3>Method</h3>
-        <p>Kepler's equation is solved by Newton-Raphson (|ΔE| &lt; 10⁻¹²) with fixed J2000.0 mean elements (Standish
-          et al., 1992) and no planet-to-planet perturbations. Heliocentric positions are computed in three
-          dimensions with each orbit's inclination and node; longitudes refer to the true equinox of date (IAU 2006
-          precession and IAU 1980 nutation) and the Sun's includes annual aberration. The equation of time uses the
-          series to O(e³) and up to the sixth harmonic in tan(ε/2) (Meeus, 1998, chap. 28). The Venus model
-          reproduces the 2001–2009 inferior conjunctions to within a day, including the transit of 8 June 2004
-          (computed minimum elongation: 0.17°). Everything is checked by <code>node validacion.mjs</code> in the
-          repository.</p>
+      <div class="prose">
+        <p>Every figure on this page comes from one file, <code>astro.js</code>, about 350 lines with no
+          dependencies. It turns a date into apparent positions the way an ephemeris does, only with Keplerian
+          elements instead of numerical integration:</p>
+      </div>
+      <figure class="fbox diagram">
+        <svg class="di-svg" viewBox="0 0 720 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Pipeline of the engine: orbital elements with secular rates, Kepler's equation, heliocentric J2000 position, geocentric position corrected for the Moon and light-time, aberration, IAU 2006 precession and IAU 1980 nutation, giving apparent coordinates, the equation of time and events; everything checked against JPL Horizons.">
+          <defs>
+            <marker id="flow" markerWidth="7" markerHeight="6" refX="6" refY="3" orient="auto">
+              <polygon points="0 0, 7 3, 0 6" class="arrowhead"/>
+            </marker>
+          </defs>
+          <g class="box"><rect x="10" y="20" width="150" height="70" rx="3"/>
+            <text x="85" y="42" text-anchor="middle" class="title">1 · Elements</text>
+            <text x="85" y="60" text-anchor="middle" class="label">a e I L ϖ Ω + rates</text>
+            <text x="85" y="75" text-anchor="middle" class="param">JPL · 1800–2050</text></g>
+          <g class="box"><rect x="190" y="20" width="150" height="70" rx="3"/>
+            <text x="265" y="42" text-anchor="middle" class="title">2 · Kepler</text>
+            <text x="265" y="60" text-anchor="middle" class="label">M = E − e sin E</text>
+            <text x="265" y="75" text-anchor="middle" class="param">Newton-Raphson 1e-12</text></g>
+          <g class="box"><rect x="370" y="20" width="150" height="70" rx="3"/>
+            <text x="445" y="42" text-anchor="middle" class="title">3 · Heliocentric</text>
+            <text x="445" y="60" text-anchor="middle" class="label">x y z, J2000 ecliptic</text>
+            <text x="445" y="75" text-anchor="middle" class="param">planets and EMB</text></g>
+          <g class="box"><rect x="550" y="20" width="160" height="70" rx="3"/>
+            <text x="630" y="42" text-anchor="middle" class="title">4 · Geocentric</text>
+            <text x="630" y="60" text-anchor="middle" class="label">Earth = EMB − Moon/82.3</text>
+            <text x="630" y="75" text-anchor="middle" class="param">light-time iterated</text></g>
+          <g class="box"><rect x="550" y="140" width="160" height="80" rx="3"/>
+            <text x="630" y="162" text-anchor="middle" class="title">5 · Apparent</text>
+            <text x="630" y="180" text-anchor="middle" class="label">aberration (v/c)</text>
+            <text x="630" y="195" text-anchor="middle" class="label">precession IAU 2006</text>
+            <text x="630" y="210" text-anchor="middle" class="label">nutation IAU 1980</text></g>
+          <g class="box"><rect x="300" y="140" width="220" height="80" rx="3"/>
+            <text x="410" y="162" text-anchor="middle" class="title">6 · Results</text>
+            <text x="410" y="180" text-anchor="middle" class="label">α δ λ β, elongation, distance</text>
+            <text x="410" y="195" text-anchor="middle" class="label">E(t) = GHA☉ − (UT − 12 h)</text>
+            <text x="410" y="210" text-anchor="middle" class="label">conjunctions, oppositions, stations</text></g>
+          <g class="box check"><rect x="10" y="140" width="250" height="80" rx="3"/>
+            <text x="135" y="162" text-anchor="middle" class="title">Checked against</text>
+            <text x="135" y="180" text-anchor="middle" class="label">JPL Horizons (DE441)</text>
+            <text x="135" y="195" text-anchor="middle" class="label">ERFA / SOFA test values</text>
+            <text x="135" y="210" text-anchor="middle" class="label">Meeus (1998) worked examples</text></g>
+          <line x1="160" y1="55" x2="186" y2="55" class="flow"/>
+          <line x1="340" y1="55" x2="366" y2="55" class="flow"/>
+          <line x1="520" y1="55" x2="546" y2="55" class="flow"/>
+          <line x1="630" y1="90" x2="630" y2="136" class="flow"/>
+          <line x1="550" y1="180" x2="524" y2="180" class="flow"/>
+          <line x1="300" y1="180" x2="264" y2="180" class="flow dashed"/>
+        </svg>
+      </figure>
+      <div class="prose">
+        <p>The engine is checked on every push by <code>validacion.mjs</code> against reference data downloaded from
+          the NASA/JPL Horizons system (DE441 ephemeris; Park et al., 2021) by <code>tools/fetch-horizons.mjs</code>,
+          and against the test values of the IAU's own libraries. What remains is the error of the Keplerian elements
+          themselves, which ignore mutual perturbations between planets; refraction and the observer's parallax are
+          also left out.</p>
       </div>
       <div class="dtable-wrap">
         <table class="dtable">
-          <caption>Extremes of the equation of time: model versus the <em>Astronomical Almanac for the year 2024</em></caption>
+          <caption>Apparent geocentric positions, 367 dates per body between 1800 and 2050, against JPL Horizons</caption>
           <thead>
-            <tr>
-              <th scope="col">Extreme</th>
-              <th scope="col">Date</th>
-              <th scope="col">Reference</th>
-              <th scope="col">Model</th>
-              <th scope="col">Δ</th>
-            </tr>
+            <tr><th scope="col">Body</th><th scope="col">RMS error</th><th scope="col">Max. error</th><th scope="col">Body</th><th scope="col">RMS error</th><th scope="col">Max. error</th></tr>
           </thead>
           <tbody>
-            <tr><td>Main minimum</td><td class="mn">~Feb 11–12</td><td class="mn">−14.24 min</td><td class="mn">−14.25 min</td><td class="mn">0.01 min</td></tr>
-            <tr><td>Secondary maximum</td><td class="mn">~May 14</td><td class="mn">+3.74 min</td><td class="mn">+3.68 min</td><td class="mn">0.06 min</td></tr>
-            <tr><td>Secondary minimum</td><td class="mn">~Jul 26</td><td class="mn">−6.46 min</td><td class="mn">−6.51 min</td><td class="mn">0.05 min</td></tr>
-            <tr><td>Main maximum</td><td class="mn">~Nov 3</td><td class="mn">+16.46 min</td><td class="mn">+16.42 min</td><td class="mn">0.04 min</td></tr>
+            <tr><td>Sun</td><td class="mn">9″</td><td class="mn">27″</td><td>Jupiter</td><td class="mn">211″</td><td class="mn">614″</td></tr>
+            <tr><td>Mercury</td><td class="mn">10″</td><td class="mn">35″</td><td>Saturn</td><td class="mn">360″</td><td class="mn">822″</td></tr>
+            <tr><td>Venus</td><td class="mn">13″</td><td class="mn">62″</td><td>Uranus</td><td class="mn">51″</td><td class="mn">126″</td></tr>
+            <tr><td>Mars</td><td class="mn">34″</td><td class="mn">206″</td><td>Neptune</td><td class="mn">29″</td><td class="mn">61″</td></tr>
           </tbody>
         </table>
       </div>
-      <p class="note">The remaining differences (≤ 0.06 min ≈ 4 s) are consistent with truncating the series and using
-        fixed J2000.0 elements.</p>
+      <div class="dtable-wrap">
+        <table class="dtable">
+          <caption>Equation of time and events against JPL Horizons</caption>
+          <thead>
+            <tr><th scope="col">Quantity</th><th scope="col">Cases</th><th scope="col">Largest difference</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Equation of time, 1805–2050 (six years, every 5 days)</td><td class="mn">440</td><td class="mn">1.1 s</td></tr>
+            <tr><td>Its four extremes in 2024</td><td class="mn">4</td><td class="mn">0.25 s</td></tr>
+            <tr><td>Series E<sub>exc</sub> + E<sub>obl</sub> against the exact E</td><td class="mn">440</td><td class="mn">0.95 s</td></tr>
+            <tr><td>Inferior conjunctions of Venus, 1995–2035</td><td class="mn">25</td><td class="mn">14 min</td></tr>
+            <tr><td>Inferior conjunctions of Mercury, 1995–2035</td><td class="mn">126</td><td class="mn">4 min</td></tr>
+            <tr><td>Oppositions and stationary points of Mars</td><td class="mn">56</td><td class="mn">1.2 h</td></tr>
+            <tr><td>Oppositions and stationary points of Jupiter and Saturn</td><td class="mn">226</td><td class="mn">4.2 h</td></tr>
+            <tr><td>Transits of Venus 1995–2035</td><td class="mn">2</td><td class="mn">both found: 2004-06-08 and 2012-06-06</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note">Nutation reproduces the ERFA test value to 10⁻¹⁹ rad and Meeus's example 22.a to 0.001″. Times
+        are TT; ΔT = TT − UT1 is neglected, which moves the equation of time by less than 0.2 s.</p>
 
       <h3 class="ref-head">References</h3>
       <ol class="ref-list">
@@ -581,6 +717,9 @@
           Willmann-Bell.</li>
         <li>Bricker, V. R., &amp; Bricker, H. M. (2011). <em>Astronomy in the Maya codices</em> (Memoirs of the
           American Philosophical Society, Vol. 265). American Philosophical Society.</li>
+        <li>Capitaine, N., Wallace, P. T., &amp; Chapront, J. (2003). Expressions for IAU 2000 precession quantities.
+          <em>Astronomy &amp; Astrophysics</em>, <em>412</em>(2), 567–586.
+          <a href="https://doi.org/10.1051/0004-6361:20031539" rel="noopener noreferrer">https://doi.org/10.1051/0004-6361:20031539</a></li>
         <li>di Cicco, D. (1979, June). Exposing the analemma. <em>Sky &amp; Telescope</em>, <em>57</em>(6), 536–540.</li>
         <li>Dobrovolskis, A. R. (2013). Insolation on exoplanets with eccentricity and obliquity.
           <em>Icarus</em>, <em>226</em>(1), 760–776.
@@ -588,6 +727,9 @@
         <li>Duffett-Smith, P. (1990). <em>Astronomy with your personal computer</em> (2nd ed.). Cambridge University
           Press.</li>
         <li>Flamsteed, J. (1672). <em>De inaequalitate dierum solarium dissertatio astronomica</em>. London.</li>
+        <li>Giorgini, J. D., Yeomans, D. K., Chamberlin, A. B., Chodas, P. W., Jacobson, R. A., Keesey, M. S., Lieske,
+          J. H., Ostro, S. J., Standish, E. M., &amp; Wimberly, R. N. (1996). JPL's on-line solar system data service.
+          <em>Bulletin of the American Astronomical Society</em>, <em>28</em>(3), 1158.</li>
         <li>Heller, R., Leconte, J., &amp; Barnes, R. (2011). Tidal obliquity evolution of potentially habitable
           planets. <em>Astronomy &amp; Astrophysics</em>, <em>528</em>, A27.
           <a href="https://doi.org/10.1051/0004-6361/201015809" rel="noopener noreferrer">https://doi.org/10.1051/0004-6361/201015809</a></li>
@@ -595,20 +737,28 @@
             the Royal Astronomical Society</em>, <em>238</em>(4), 1529–1535.
           <a href="https://doi.org/10.1093/mnras/238.4.1529" rel="noopener noreferrer">https://doi.org/10.1093/mnras/238.4.1529</a></li>
         <li>Hunger, H., &amp; Pingree, D. (1999). <em>Astral sciences in Mesopotamia</em>. Brill.</li>
+        <li>IAU SOFA Board. (n.d.). <em>IAU SOFA software collection</em>. International Astronomical Union.
+          <a href="https://www.iausofa.org/" rel="noopener noreferrer">https://www.iausofa.org/</a></li>
         <li>Lakdawalla, E. (2014, May 6). <em>A Martian analemma</em>. The Planetary Society.
           <a href="https://www.planetary.org/articles/a-martian-analemma" rel="noopener noreferrer">https://www.planetary.org/articles/a-martian-analemma</a></li>
         <li>Meeus, J. (1998). <em>Astronomical algorithms</em> (2nd ed.). Willmann-Bell.</li>
         <li>Müller, M. (1995). Equation of time — Problem in astronomy. <em>Acta Physica Polonica A</em>,
           <em>88</em>(Suppl.), S-49.</li>
+        <li>Park, R. S., Folkner, W. M., Williams, J. G., &amp; Boggs, D. H. (2021). The JPL planetary and lunar
+          ephemerides DE440 and DE441. <em>The Astronomical Journal</em>, <em>161</em>(3), 105.
+          <a href="https://doi.org/10.3847/1538-3881/abd414" rel="noopener noreferrer">https://doi.org/10.3847/1538-3881/abd414</a></li>
+        <li>Petit, G., &amp; Luzum, B. (Eds.). (2010). <em>IERS Conventions (2010)</em> (IERS Technical Note No. 36).
+          Verlag des Bundesamts für Kartographie und Geodäsie.</li>
         <li>Sawyer, F. W., III. (1994, June). Of analemmas, mean time and the analemmatic sundial — Part I.
           <em>Bulletin of the British Sundial Society</em>, <em>6</em>(2), 2–6.</li>
         <li>Standish, E. M., Newhall, X. X., Williams, J. G., &amp; Yeomans, D. K. (1992). Orbital ephemerides of the
           Sun, Moon, and planets. In P. K. Seidelmann (Ed.), <em>Explanatory supplement to the astronomical
             almanac</em> (Rev. ed., chap. 5, pp. 279–323). University Science Books.</li>
+        <li>Standish, E. M., &amp; Williams, J. G. (1992). <em>Approximate positions of the planets</em>. NASA Jet
+          Propulsion Laboratory, Solar System Dynamics.
+          <a href="https://ssd.jpl.nasa.gov/planets/approx_pos.html" rel="noopener noreferrer">https://ssd.jpl.nasa.gov/planets/approx_pos.html</a></li>
         <li>Urschel, B. (n.d.). <em>Other analemmas</em>. Analemma.com.
           <a href="https://www.analemma.com/other-analemmas.html" rel="noopener noreferrer">https://www.analemma.com/other-analemmas.html</a></li>
-        <li>U.S. Naval Observatory &amp; H.M. Nautical Almanac Office. (2024). <em>The astronomical almanac for the
-            year 2024</em>. U.S. Government Publishing Office &amp; U.K. Hydrographic Office.</li>
         <li>Waugh, A. E. (1973). <em>Sundials: Their theory and construction</em>. Dover Publications.</li>
         <li>Williams, D. R. (2025, March 18). <em>Planetary fact sheet — Metric</em>. NASA Goddard Space Flight
           Center.
