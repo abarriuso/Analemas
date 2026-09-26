@@ -313,7 +313,8 @@
 
     spdLbl.textContent = spd.value + '×';
     restart();
-    return { restart, redraw: sync, get t() { return st.t; } };
+    // set() clamps t: total() can shrink (a leap year → the next one).
+    return { restart, redraw: () => set(st.t, st.playing), get t() { return st.t; } };
   }
 
   // Runs init() once, when the section comes near the viewport, so that the
@@ -557,7 +558,9 @@
         const eSec = cp.x * 60;
         out.date.textContent = fmtDate(cp.d);
         out.eq.textContent = `${fmtMinSec(eSec, true)} (${eSec >= 0 ? S.fast : S.slow})`;
-        const noon = 43200 - eSec, hh = Math.floor(noon / 3600), mm = Math.floor(noon % 3600 / 60), ss = Math.round(noon % 60);
+        // Whole seconds first, rounded as E is shown, so seconds never read 60.
+        const noon = 43200 - Math.sign(eSec) * Math.round(Math.abs(eSec));
+        const hh = Math.floor(noon / 3600), mm = Math.floor(noon % 3600 / 60), ss = noon % 60;
         out.noon.textContent = `${hh}:${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')} ${S.lmt}`;
         out.exc.textContent = fmtMinSec(cp.exc * 60, true);
         out.obl.textContent = fmtMinSec(cp.obl * 60, true);
@@ -566,7 +569,8 @@
         text(ctx, S.solarTitle(Y.y), xm, small ? 18 : 24, { size: small ? 9.5 : 11, weight: 500, color: C.title });
 
         if (hover) {
-          const i = nearest(P, Y.n, p => [MX(p.x), MY(p.y)], hover.x, hover.y, 14);
+          // P[n] is 1 January of the next year: leave it out.
+          const i = nearest(P, Y.n - 1, p => [MX(p.x), MY(p.y)], hover.x, hover.y, 14);
           if (i >= 0) {
             const p = P[i];
             ctx.beginPath(); ctx.arc(MX(p.x), MY(p.y), 6, 0, TAU); ctx.strokeStyle = C.title; ctx.lineWidth = 1; ctx.stroke();

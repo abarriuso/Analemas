@@ -100,6 +100,20 @@ function smoke(lang, { reducedMotion = false, now = null } = {}) {
   el('solar-year').value = '2050'; el('solar-year').fire('change');
   el('solar-next').fire('click');
   el('solar-comp').checked = true; el('solar-comp').fire('change');
+
+  // Every day of 2026: local noon never reads "…:60" (1 Sep, 14 Oct…).
+  el('solar-year').value = '2026'; el('solar-year').fire('change');
+  for (let day = 0; day <= 364; day++) {
+    el('solar-scrub').value = String(day); el('solar-scrub').fire('input');
+    runFrames(1);
+    if (/:60\b/.test(el('sol-noon').textContent)) throw new Error(`[${lang}] day ${day}: noon reads ${el('sol-noon').textContent}`);
+  }
+  // From the end of a leap year to the next year: stay inside that year.
+  el('solar-year').value = '2024'; el('solar-year').fire('change');
+  el('solar-complete').fire('click');
+  el('solar-next').fire('click');
+  runFrames(1);
+  if (!/2025/.test(el('sol-date').textContent)) throw new Error(`[${lang}] after 2024 → 2025 the date reads ${el('sol-date').textContent}`);
   runFrames(3);
 
   // Planets: every planet button, previous/next event and back to today.
