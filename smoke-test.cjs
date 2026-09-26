@@ -1,6 +1,7 @@
 // Loads astro.js + scripts.js on a minimal DOM, brings every simulation into
 // view, runs frames and works every control (timeline, year, planets, events,
-// views), once per language (index.html in English, es/index.html in Spanish).
+// views), once per language (index.html in English, es/index.html in Spanish)
+// and once more per language with prefers-reduced-motion.
 // Fails if anything throws or a readout is left empty.
 //   node smoke-test.cjs
 'use strict';
@@ -16,7 +17,7 @@ const ctx2d = new Proxy({ measureText: () => ({ width: 40 }) }, {
 });
 const sources = ['astro.js', 'scripts.js'].map(f => [f, fs.readFileSync(path.join(__dirname, f), 'utf8')]);
 
-function smoke(lang) {
+function smoke(lang, { reducedMotion = false, now = null } = {}) {
   const elements = new Map();
   const created = [];
   function el(id) {
@@ -50,7 +51,7 @@ function smoke(lang) {
     },
     window: {
       innerWidth: 1280, innerHeight: 800, devicePixelRatio: 2,
-      matchMedia: () => ({ matches: false }),
+      matchMedia: () => ({ matches: reducedMotion }),
       addEventListener: noop
     },
     requestAnimationFrame: fn => frames.push(fn),
@@ -61,7 +62,9 @@ function smoke(lang) {
       disconnect() {}
     },
     ResizeObserver: class { observe() {} },
-    Intl, Math, Number, String, Object, Map, Date, Array, setTimeout, clearTimeout
+    Intl, Math, Number, String, Object, Map, Array, setTimeout, clearTimeout,
+    // Optionally pin "today", which decides the events the page opens with.
+    Date: now === null ? Date : class extends Date { static now() { return now; } }
   };
   sandbox.globalThis = sandbox;
   vm.createContext(sandbox);
@@ -97,13 +100,31 @@ function smoke(lang) {
   el('solar-year').value = '2050'; el('solar-year').fire('change');
   el('solar-next').fire('click');
   el('solar-comp').checked = true; el('solar-comp').fire('change');
+
+  // Every day of 2026: local noon never reads "…:60" (1 Sep, 14 Oct…).
+  el('solar-year').value = '2026'; el('solar-year').fire('change');
+  for (let day = 0; day <= 364; day++) {
+    el('solar-scrub').value = String(day); el('solar-scrub').fire('input');
+    runFrames(1);
+    if (/:60\b/.test(el('sol-noon').textContent)) throw new Error(`[${lang}] day ${day}: noon reads ${el('sol-noon').textContent}`);
+  }
+  // From the end of a leap year to the next year: stay inside that year.
+  el('solar-year').value = '2024'; el('solar-year').fire('change');
+  el('solar-complete').fire('click');
+  el('solar-next').fire('click');
+  runFrames(1);
+  if (!/2025/.test(el('sol-date').textContent)) throw new Error(`[${lang}] after 2024 → 2025 the date reads ${el('sol-date').textContent}`);
   runFrames(3);
 
   // Planets: every planet button, previous/next event and back to today.
   const planetButtons = created.filter(e => e.dataset.id);
   if (planetButtons.length !== 7) throw new Error(`[${lang}] ${planetButtons.length} planet buttons, expected 7`);
+  let shown = el('pl-head').textContent;
   for (const b of planetButtons) {
     b.fire('click');
+    // Each planet must replace the previous one's panel.
+    if (el('pl-head').textContent === shown) throw new Error(`[${lang}] ${b.dataset.id}: the panel still shows ${shown}`);
+    shown = el('pl-head').textContent;
     el('pl-next').fire('click');
     el('pl-prev').fire('click');
     el('pl-fan').fire('change');
@@ -134,8 +155,15 @@ function smoke(lang) {
 }
 
 try {
-  for (const lang of ['en', 'es']) smoke(lang);
-  console.log('OK — load, drawing and controls without errors (en, es)');
+  for (const lang of ['en', 'es']) {
+    smoke(lang);
+    // prefers-reduced-motion: static frames instead of animations.
+    smoke(lang, { reducedMotion: true });
+    // A day with no inferior conjunction of Mercury in a mean synodic
+    // period ahead: the "next event" search used to come back empty.
+    smoke(lang, { now: Date.UTC(2027, 1, 24, 10) });
+  }
+  console.log('OK — load, drawing and controls without errors (en, es; reduced motion; fixed dates)');
 } catch (err) {
   console.error('SMOKE TEST FAILED:', err.stack);
   process.exit(1);
