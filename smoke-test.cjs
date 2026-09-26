@@ -17,7 +17,7 @@ const ctx2d = new Proxy({ measureText: () => ({ width: 40 }) }, {
 });
 const sources = ['astro.js', 'scripts.js'].map(f => [f, fs.readFileSync(path.join(__dirname, f), 'utf8')]);
 
-function smoke(lang, reducedMotion) {
+function smoke(lang, { reducedMotion = false, now = null } = {}) {
   const elements = new Map();
   const created = [];
   function el(id) {
@@ -62,7 +62,9 @@ function smoke(lang, reducedMotion) {
       disconnect() {}
     },
     ResizeObserver: class { observe() {} },
-    Intl, Math, Number, String, Object, Map, Date, Array, setTimeout, clearTimeout
+    Intl, Math, Number, String, Object, Map, Array, setTimeout, clearTimeout,
+    // Optionally pin "today", which decides the events the page opens with.
+    Date: now === null ? Date : class extends Date { static now() { return now; } }
   };
   sandbox.globalThis = sandbox;
   vm.createContext(sandbox);
@@ -103,8 +105,12 @@ function smoke(lang, reducedMotion) {
   // Planets: every planet button, previous/next event and back to today.
   const planetButtons = created.filter(e => e.dataset.id);
   if (planetButtons.length !== 7) throw new Error(`[${lang}] ${planetButtons.length} planet buttons, expected 7`);
+  let shown = el('pl-head').textContent;
   for (const b of planetButtons) {
     b.fire('click');
+    // Each planet must replace the previous one's panel.
+    if (el('pl-head').textContent === shown) throw new Error(`[${lang}] ${b.dataset.id}: the panel still shows ${shown}`);
+    shown = el('pl-head').textContent;
     el('pl-next').fire('click');
     el('pl-prev').fire('click');
     el('pl-fan').fire('change');
@@ -136,11 +142,14 @@ function smoke(lang, reducedMotion) {
 
 try {
   for (const lang of ['en', 'es']) {
-    smoke(lang, false);
+    smoke(lang);
     // prefers-reduced-motion: static frames instead of animations.
-    smoke(lang, true);
+    smoke(lang, { reducedMotion: true });
+    // A day with no inferior conjunction of Mercury in a mean synodic
+    // period ahead: the "next event" search used to come back empty.
+    smoke(lang, { now: Date.UTC(2027, 1, 24, 10) });
   }
-  console.log('OK — load, drawing and controls without errors (en, es; with and without reduced motion)');
+  console.log('OK — load, drawing and controls without errors (en, es; reduced motion; fixed dates)');
 } catch (err) {
   console.error('SMOKE TEST FAILED:', err.stack);
   process.exit(1);

@@ -591,8 +591,12 @@
   function loopEvent(id, near) {
     const inner = id === 'mercury' || id === 'venus';
     const S2 = A.synodic(id) / 2;
-    const found = inner ? A.inferiorConjunctions(id, near - S2 - 2, near + S2 + 2, 1)
-      : A.oppositions(id, near - S2 - 4, near + S2 + 4, 4);
+    // Search ±0.65 synodic periods: real intervals between events stray from
+    // the mean one (Mercury's by up to 13 days, Mars's by 30), so a window of
+    // exactly one period can miss them all.
+    const win = 1.3 * S2;
+    const found = inner ? A.inferiorConjunctions(id, near - win - 2, near + win + 2, 1)
+      : A.oppositions(id, near - win - 4, near + win + 4, 4);
     if (!found.length) return null;
     const ev = found.reduce((b, x) => Math.abs(x.day - near) < Math.abs(b.day - near) ? x : b);
     const st = A.stations(id, ev.day - 0.3 * 2 * S2, ev.day + 0.3 * 2 * S2, inner ? 0.5 : 2);
@@ -771,8 +775,11 @@
     });
 
     function load(near) {
-      E = loopEvent(selected, near);
-      if (!E) return;
+      // Keep the current event if no new one is found, rather than leaving
+      // the panel showing the previous planet with nothing drawn.
+      const next = loopEvent(selected, near);
+      if (!next) return;
+      E = next;
       const [name, shape, desc] = S.planets[selected];
       info.head.textContent = name;
       info.ev.textContent = fmtDateHour(E.ev.day);
