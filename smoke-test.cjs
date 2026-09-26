@@ -1,6 +1,7 @@
 // Loads astro.js + scripts.js on a minimal DOM, brings every simulation into
 // view, runs frames and works every control (timeline, year, planets, events,
-// views), once per language (index.html in English, es/index.html in Spanish).
+// views), once per language (index.html in English, es/index.html in Spanish)
+// and once more per language with prefers-reduced-motion.
 // Fails if anything throws or a readout is left empty.
 //   node smoke-test.cjs
 'use strict';
@@ -16,7 +17,7 @@ const ctx2d = new Proxy({ measureText: () => ({ width: 40 }) }, {
 });
 const sources = ['astro.js', 'scripts.js'].map(f => [f, fs.readFileSync(path.join(__dirname, f), 'utf8')]);
 
-function smoke(lang) {
+function smoke(lang, reducedMotion) {
   const elements = new Map();
   const created = [];
   function el(id) {
@@ -50,7 +51,7 @@ function smoke(lang) {
     },
     window: {
       innerWidth: 1280, innerHeight: 800, devicePixelRatio: 2,
-      matchMedia: () => ({ matches: false }),
+      matchMedia: () => ({ matches: reducedMotion }),
       addEventListener: noop
     },
     requestAnimationFrame: fn => frames.push(fn),
@@ -134,8 +135,12 @@ function smoke(lang) {
 }
 
 try {
-  for (const lang of ['en', 'es']) smoke(lang);
-  console.log('OK — load, drawing and controls without errors (en, es)');
+  for (const lang of ['en', 'es']) {
+    smoke(lang, false);
+    // prefers-reduced-motion: static frames instead of animations.
+    smoke(lang, true);
+  }
+  console.log('OK — load, drawing and controls without errors (en, es; with and without reduced motion)');
 } catch (err) {
   console.error('SMOKE TEST FAILED:', err.stack);
   process.exit(1);

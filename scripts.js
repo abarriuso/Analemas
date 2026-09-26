@@ -454,7 +454,11 @@
       dot(ctx, px(cp), py(cp), 4.5 * k, '#fbe3b8', C.acc(0.18));
     }
 
-    const ctx = fitCanvas(cv, () => 1, (w, h) => { W = w; H = h; if (reducedMotion.matches) render(); });
+    // fitCanvas runs its resize callback once before returning, when ctx is
+    // not assigned yet: the first static frame is drawn right after instead.
+    let ctx = null;
+    ctx = fitCanvas(cv, () => 1, (w, h) => { W = w; H = h; if (reducedMotion.matches && ctx) render(); });
+    if (reducedMotion.matches && W) render();
     whileVisible(cv, dt => {
       if (reducedMotion.matches || !W) return;
       progress = (progress + dt * 0.00009) % 1;
