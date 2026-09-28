@@ -791,12 +791,14 @@
       }
     });
 
-    function load(near) {
-      // Keep the current event if no new one is found, rather than leaving
-      // the panel showing the previous planet with nothing drawn.
-      const next = loopEvent(selected, near);
+    function load(near, id = selected) {
+      // If no event is found, nothing changes: not the event, and not the
+      // planet either, whose name and colour the chart draws with the event.
+      const next = loopEvent(id, near);
       if (!next) return;
+      selected = id;
       E = next;
+      bar.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.id === id)));
       const [name, shape, desc] = S.planets[selected];
       info.head.textContent = name;
       info.ev.textContent = fmtDateHour(E.ev.day);
@@ -812,10 +814,8 @@
     }
 
     function select(id) {
-      selected = id;
-      bar.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.id === id)));
       // The next event from today.
-      load(TODAY + A.synodic(id) / 2 - 1);
+      load(TODAY + A.synodic(id) / 2 - 1, id);
     }
 
     for (const id of A.PLANET_IDS) {
