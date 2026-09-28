@@ -354,17 +354,30 @@
     // the Earth–Sun distance, equinoxes and solstices as λ☉ = 0°, 90°, 180°, 270°.
     const at = f => A.crossings(f, d0 - 1, d0 + n + 1, 1)[0];
     const lonAt = deg => at(d => A.wrapPi(A.sun(d).lon - deg * DEG));
-    // The Moon makes the Earth–Sun distance wobble, so the extremes are taken
-    // globally: coarse daily scan, then a fine scan of ±2 days.
+    // Perihelion falls a few days either side of 1 January, so the year's first
+    // and last days can hold the perihelia of two different years. Every daily
+    // extreme (the Moon makes the Earth–Sun distance wobble, so there can be
+    // several) is refined to ~15 minutes, and the deepest one inside this
+    // calendar year wins. Some years of the 1800s have none (30 Dec 1801, then
+    // 2 Jan 1803): they get the one that opens the year.
     const extreme = sign => {
-      let best = 0;
-      pts.forEach((p, k) => { if (sign * p.dist > sign * pts[best].dist) best = k; });
-      let bd = d0 + best, bv = sign * pts[best].dist;
-      for (let d = d0 + best - 2; d <= d0 + best + 2; d += 0.01) {
-        const v = sign * A.sun(d).dist;
-        if (v > bv) { bv = v; bd = d; }
+      const f = d => sign * A.sun(d).dist;
+      const daily = k => k >= 0 && k <= n ? sign * pts[k].dist : f(d0 + k);
+      const found = [];
+      for (let k = -2; k <= n + 2; k++) {
+        const v = daily(k);
+        if (v <= daily(k - 1) || v < daily(k + 1)) continue;
+        let bd = d0 + k, bv = v;
+        for (let d = d0 + k - 1; d <= d0 + k + 1; d += 0.01) {
+          const w = f(d);
+          if (w > bv) { bv = w; bd = d; }
+        }
+        found.push({ d: bd, v: bv });
       }
-      return bd;
+      // The year runs from 1 January 0 h UT, half a day before d0.
+      const start = d0 - 0.5, inYear = found.filter(e => e.d >= start && e.d < start + n);
+      if (inYear.length) return inYear.reduce((b, e) => e.v > b.v ? e : b).d;
+      return found.reduce((b, e) => Math.abs(e.d - start) < Math.abs(b.d - start) ? e : b).d;
     };
     const events = {
       peri: extreme(-1), aph: extreme(1),

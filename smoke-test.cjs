@@ -114,6 +114,12 @@ function smoke(lang, { reducedMotion = false, now = null } = {}) {
   el('solar-next').fire('click');
   runFrames(1);
   if (!/2025/.test(el('sol-date').textContent)) throw new Error(`[${lang}] after 2024 → 2025 the date reads ${el('sol-date').textContent}`);
+  // Perihelion right after 1 January: the year's own, not the next one's
+  // (2025 read "Jan 3, 2026"). 1802 has none: the one that opens the year.
+  for (const [year, want] of [['2025', '2025'], ['2028', '2028'], ['1801', '1801'], ['1802', '1801']]) {
+    el('solar-year').value = year; el('solar-year').fire('change');
+    if (!el('sol-peri').textContent.includes(want)) throw new Error(`[${lang}] ${year}: perihelion reads ${el('sol-peri').textContent}`);
+  }
   runFrames(3);
 
   // Planets: every planet button, previous/next event and back to today.
