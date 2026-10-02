@@ -313,7 +313,8 @@
 
     spdLbl.textContent = spd.value + '×';
     restart();
-    return { restart, redraw: sync, get t() { return st.t; } };
+    // set() clamps t: total() can shrink (a leap year → the next one).
+    return { restart, redraw: () => set(st.t, st.playing), get t() { return st.t; } };
   }
 
   // Runs init() once, when the section comes near the viewport, so that the
@@ -353,17 +354,30 @@
     // the Earth–Sun distance, equinoxes and solstices as λ☉ = 0°, 90°, 180°, 270°.
     const at = f => A.crossings(f, d0 - 1, d0 + n + 1, 1)[0];
     const lonAt = deg => at(d => A.wrapPi(A.sun(d).lon - deg * DEG));
-    // The Moon makes the Earth–Sun distance wobble, so the extremes are taken
-    // globally: coarse daily scan, then a fine scan of ±2 days.
+    // Perihelion falls a few days either side of 1 January, so the year's first
+    // and last days can hold the perihelia of two different years. Every daily
+    // extreme (the Moon makes the Earth–Sun distance wobble, so there can be
+    // several) is refined to ~15 minutes, and the deepest one inside this
+    // calendar year wins. Some years of the 1800s have none (30 Dec 1801, then
+    // 2 Jan 1803): they get the one that opens the year.
     const extreme = sign => {
-      let best = 0;
-      pts.forEach((p, k) => { if (sign * p.dist > sign * pts[best].dist) best = k; });
-      let bd = d0 + best, bv = sign * pts[best].dist;
-      for (let d = d0 + best - 2; d <= d0 + best + 2; d += 0.01) {
-        const v = sign * A.sun(d).dist;
-        if (v > bv) { bv = v; bd = d; }
+      const f = d => sign * A.sun(d).dist;
+      const daily = k => k >= 0 && k <= n ? sign * pts[k].dist : f(d0 + k);
+      const found = [];
+      for (let k = -2; k <= n + 2; k++) {
+        const v = daily(k);
+        if (v <= daily(k - 1) || v < daily(k + 1)) continue;
+        let bd = d0 + k, bv = v;
+        for (let d = d0 + k - 1; d <= d0 + k + 1; d += 0.01) {
+          const w = f(d);
+          if (w > bv) { bv = w; bd = d; }
+        }
+        found.push({ d: bd, v: bv });
       }
-      return bd;
+      // The year runs from 1 January 0 h UT, half a day before d0.
+      const start = d0 - 0.5, inYear = found.filter(e => e.d >= start && e.d < start + n);
+      if (inYear.length) return inYear.reduce((b, e) => e.v > b.v ? e : b).d;
+      return found.reduce((b, e) => Math.abs(e.d - start) < Math.abs(b.d - start) ? e : b).d;
     };
     const events = {
       peri: extreme(-1), aph: extreme(1),
@@ -454,7 +468,11 @@
       dot(ctx, px(cp), py(cp), 4.5 * k, '#fbe3b8', C.acc(0.18));
     }
 
-    const ctx = fitCanvas(cv, () => 1, (w, h) => { W = w; H = h; if (reducedMotion.matches) render(); });
+    // fitCanvas runs its resize callback once before returning, when ctx is
+    // not assigned yet: the first static frame is drawn right after instead.
+    let ctx = null;
+    ctx = fitCanvas(cv, () => 1, (w, h) => { W = w; H = h; if (reducedMotion.matches && ctx) render(); });
+    if (reducedMotion.matches && W) render();
     whileVisible(cv, dt => {
       if (reducedMotion.matches || !W) return;
       progress = (progress + dt * 0.00009) % 1;
@@ -553,7 +571,9 @@
         const eSec = cp.x * 60;
         out.date.textContent = fmtDate(cp.d);
         out.eq.textContent = `${fmtMinSec(eSec, true)} (${eSec >= 0 ? S.fast : S.slow})`;
-        const noon = 43200 - eSec, hh = Math.floor(noon / 3600), mm = Math.floor(noon % 3600 / 60), ss = Math.round(noon % 60);
+        // Whole seconds first, rounded as E is shown, so seconds never read 60.
+        const noon = 43200 - Math.sign(eSec) * Math.round(Math.abs(eSec));
+        const hh = Math.floor(noon / 3600), mm = Math.floor(noon % 3600 / 60), ss = noon % 60;
         out.noon.textContent = `${hh}:${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')} ${S.lmt}`;
         out.exc.textContent = fmtMinSec(cp.exc * 60, true);
         out.obl.textContent = fmtMinSec(cp.obl * 60, true);
@@ -562,7 +582,8 @@
         text(ctx, S.solarTitle(Y.y), xm, small ? 18 : 24, { size: small ? 9.5 : 11, weight: 500, color: C.title });
 
         if (hover) {
-          const i = nearest(P, Y.n, p => [MX(p.x), MY(p.y)], hover.x, hover.y, 14);
+          // P[n] is 1 January of the next year: leave it out.
+          const i = nearest(P, Y.n - 1, p => [MX(p.x), MY(p.y)], hover.x, hover.y, 14);
           if (i >= 0) {
             const p = P[i];
             ctx.beginPath(); ctx.arc(MX(p.x), MY(p.y), 6, 0, TAU); ctx.strokeStyle = C.title; ctx.lineWidth = 1; ctx.stroke();
@@ -587,8 +608,12 @@
   function loopEvent(id, near) {
     const inner = id === 'mercury' || id === 'venus';
     const S2 = A.synodic(id) / 2;
-    const found = inner ? A.inferiorConjunctions(id, near - S2 - 2, near + S2 + 2, 1)
-      : A.oppositions(id, near - S2 - 4, near + S2 + 4, 4);
+    // Search ±0.65 synodic periods: real intervals between events stray from
+    // the mean one (Mercury's by up to 13 days, Mars's by 30), so a window of
+    // exactly one period can miss them all.
+    const win = 1.3 * S2;
+    const found = inner ? A.inferiorConjunctions(id, near - win - 2, near + win + 2, 1)
+      : A.oppositions(id, near - win - 4, near + win + 4, 4);
     if (!found.length) return null;
     const ev = found.reduce((b, x) => Math.abs(x.day - near) < Math.abs(b.day - near) ? x : b);
     const st = A.stations(id, ev.day - 0.3 * 2 * S2, ev.day + 0.3 * 2 * S2, inner ? 0.5 : 2);
@@ -766,9 +791,14 @@
       }
     });
 
-    function load(near) {
-      E = loopEvent(selected, near);
-      if (!E) return;
+    function load(near, id = selected) {
+      // If no event is found, nothing changes: not the event, and not the
+      // planet either, whose name and colour the chart draws with the event.
+      const next = loopEvent(id, near);
+      if (!next) return;
+      selected = id;
+      E = next;
+      bar.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.id === id)));
       const [name, shape, desc] = S.planets[selected];
       info.head.textContent = name;
       info.ev.textContent = fmtDateHour(E.ev.day);
@@ -784,10 +814,8 @@
     }
 
     function select(id) {
-      selected = id;
-      bar.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.id === id)));
       // The next event from today.
-      load(TODAY + A.synodic(id) / 2 - 1);
+      load(TODAY + A.synodic(id) / 2 - 1, id);
     }
 
     for (const id of A.PLANET_IDS) {
